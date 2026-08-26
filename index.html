@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard de Performance • Agosto 2026 | V4 Company</title>
+  <title id="pageTitle">Dashboard de Tráfego • V4 Company</title>
   <!-- Google Fonts: Inter / Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -65,6 +65,13 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #334155;
     }
+    .animate-fadeIn {
+      animation: fadeIn 0.15s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
     @media print {
       .no-print { display: none !important; }
       body { background: #ffffff !important; color: #000000 !important; }
@@ -78,50 +85,91 @@
 
   <!-- TOP HEADER -->
   <header class="sticky top-0 z-40 bg-v4-bg/95 backdrop-blur border-b border-v4-border no-print">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
       
-      <!-- Brand & Title -->
+      <!-- Brand & Client Dropdown Selector -->
       <div class="flex items-center gap-3">
         <div class="w-9 h-9 rounded-xl bg-v4-red flex items-center justify-center font-black text-lg text-white shadow-sm shadow-v4-red/30 shrink-0">
           V4
         </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">
-              Dashboard de Tráfego
-            </h1>
-            <span class="px-2 py-0.5 text-[11px] font-semibold bg-slate-800 text-slate-300 rounded-md border border-slate-700">
-              Agosto 2026
-            </span>
+
+        <div class="h-6 w-px bg-v4-border hidden sm:block"></div>
+
+        <!-- CLIENT SELECTOR DROPDOWN (MENU SUSPENSO) -->
+        <div class="relative">
+          <button id="clientDropdownBtn" onclick="toggleClientDropdown(event)" class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-v4-card hover:bg-slate-800/80 border border-v4-border hover:border-slate-600 transition-all text-left group">
+            <div id="activeClientAvatar" class="w-7 h-7 rounded-lg bg-gradient-to-tr from-v4-red to-pink-600 flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm">
+              CT
+            </div>
+            <div class="flex flex-col">
+              <div class="flex items-center gap-1.5">
+                <span id="activeClientName" class="text-xs sm:text-sm font-bold text-white tracking-tight group-hover:text-v4-red transition-colors max-w-[130px] sm:max-w-[200px] truncate">
+                  Cliente Teste
+                </span>
+                <i data-lucide="chevron-down" id="clientDropdownChevron" class="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200"></i>
+              </div>
+              <span id="activeClientSourceBadge" class="text-[10px] text-slate-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Google Sheets
+              </span>
+            </div>
+          </button>
+
+          <!-- Dropdown Popover Menu -->
+          <div id="clientDropdownMenu" class="hidden absolute top-full left-0 mt-2 w-72 sm:w-80 bg-v4-card border border-v4-border rounded-2xl shadow-2xl z-50 p-2 space-y-2 animate-fadeIn backdrop-blur-xl">
+            
+            <!-- Search / Filter input -->
+            <div class="relative px-1 pt-1">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="clientSearchInput" oninput="filterClientList(this.value)" placeholder="Buscar cliente..." class="w-full bg-v4-bg border border-v4-border rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 outline-none focus:border-v4-red">
+            </div>
+
+            <!-- List of Clients -->
+            <div class="max-h-60 overflow-y-auto custom-scrollbar space-y-1 px-1" id="clientDropdownList">
+              <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Divider -->
+            <div class="border-t border-v4-border/80 pt-1.5 px-1 space-y-1">
+              <button onclick="openAddClientModal()" class="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-xl transition-all">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Cadastrar Novo Cliente</span>
+              </button>
+              <button onclick="openClientManagerModal()" class="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                <span class="flex items-center gap-2">
+                  <i data-lucide="sliders-horizontal" class="w-4 h-4 text-slate-400"></i>
+                  Gerenciar Clientes & Planilhas
+                </span>
+                <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded" id="clientCountBadge">3</span>
+              </button>
+            </div>
+
           </div>
-          <p class="text-[11px] text-slate-400 hidden sm:block">
-            Exibindo exclusivamente os 10 indicadores de performance
-          </p>
         </div>
+
       </div>
 
       <!-- Header Actions -->
       <div class="flex items-center gap-2">
-        <!-- Live Sync Now -->
-        <button id="btnSyncNow" onclick="syncFromGoogleSheets()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-v4-card hover:bg-slate-800 border border-v4-border rounded-lg transition-all active:scale-95" title="Sincronizar dados">
+        <!-- Live Sync Now (For Selected Client) -->
+        <button id="btnSyncNow" onclick="syncCurrentClient()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-v4-card hover:bg-slate-800 border border-v4-border rounded-lg transition-all active:scale-95 shadow-sm" title="Sincronizar dados do cliente selecionado">
           <i data-lucide="refresh-cw" id="syncIcon" class="w-3.5 h-3.5 text-emerald-400"></i>
           <span class="hidden sm:inline">Sincronizar</span>
         </button>
 
-        <!-- Config Google Sheets -->
-        <button onclick="openConfigModal()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-v4-card hover:bg-slate-800 border border-v4-border rounded-lg transition-all" title="Configurar Google Sheets">
+        <!-- Config Google Sheets of Active Client -->
+        <button onclick="openEditActiveClientModal()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-v4-card hover:bg-slate-800 border border-v4-border rounded-lg transition-all" title="Configurar Planilha do Cliente">
           <i data-lucide="sheet" class="w-3.5 h-3.5 text-emerald-400"></i>
           <span class="hidden md:inline">Planilha</span>
         </button>
 
         <!-- Export CSV -->
-        <button onclick="exportAugustCSV()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-v4-card hover:bg-slate-800 border border-v4-border rounded-lg transition-all">
+        <button onclick="exportClientCSV()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-v4-card hover:bg-slate-800 border border-v4-border rounded-lg transition-all" title="Exportar dados em CSV">
           <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-slate-300"></i>
           <span class="hidden sm:inline">CSV</span>
         </button>
 
         <!-- Print / PDF -->
-        <button onclick="window.print()" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-v4-red hover:bg-v4-darkRed rounded-lg transition-all shadow-sm shadow-v4-red/20 active:scale-95">
+        <button onclick="window.print()" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-v4-red hover:bg-v4-darkRed rounded-lg transition-all shadow-sm shadow-v4-red/20 active:scale-95" title="Imprimir / Salvar PDF">
           <i data-lucide="printer" class="w-3.5 h-3.5"></i>
           <span class="hidden sm:inline">PDF</span>
         </button>
@@ -133,32 +181,34 @@
   <!-- MAIN CONTAINER -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-    <!-- CHANNEL SELECTOR & SOURCE STATUS -->
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 rounded-xl bg-v4-card border border-v4-border">
+    <!-- SUB-HEADER: CLIENT BADGE, CHANNEL SELECTOR & SOURCE STATUS -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 p-3.5 rounded-xl bg-v4-card border border-v4-border">
       
       <!-- Channel Switcher -->
-      <div class="flex items-center gap-1 bg-v4-bg p-1 rounded-lg border border-v4-border w-full sm:w-auto">
-        <button onclick="setChannel('consolidado')" id="btnConsolidado" class="flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-bold rounded-md transition-all text-white bg-v4-red shadow-sm shadow-v4-red/30">
+      <div class="flex items-center gap-1 bg-v4-bg p-1 rounded-lg border border-v4-border w-full md:w-auto">
+        <button onclick="setChannel('consolidado')" id="btnConsolidado" class="flex-1 md:flex-none px-3.5 py-1.5 text-xs font-bold rounded-md transition-all text-white bg-v4-red shadow-sm shadow-v4-red/30">
           Consolidado
         </button>
-        <button onclick="setChannel('meta')" id="btnMeta" class="flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white">
+        <button onclick="setChannel('meta')" id="btnMeta" class="flex-1 md:flex-none px-3.5 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white">
           <span class="flex items-center justify-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-v4-meta"></span> Meta Ads
           </span>
         </button>
-        <button onclick="setChannel('google')" id="btnGoogle" class="flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white">
+        <button onclick="setChannel('google')" id="btnGoogle" class="flex-1 md:flex-none px-3.5 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white">
           <span class="flex items-center justify-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-v4-google"></span> Google Ads
           </span>
         </button>
       </div>
 
-      <!-- Sync status info -->
-      <div class="flex items-center gap-2 text-xs text-slate-400">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-        <span id="syncSourceText">Fonte: Planilha Teste - 2026</span>
-        <span class="text-slate-600">•</span>
-        <span id="lastSyncTimeText">Atualizado agora</span>
+      <!-- Active Client & Sync status info -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-400 w-full md:w-auto justify-between md:justify-end">
+        <div class="flex items-center gap-2">
+          <span id="syncDotStatus" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="syncSourceText" class="font-medium text-slate-300">Planilha Conectada: Teste - 2026</span>
+        </div>
+        <span class="text-slate-600 hidden sm:inline">•</span>
+        <span id="lastSyncTimeText" class="text-slate-400">Sincronizado agora</span>
       </div>
 
     </div>
@@ -168,7 +218,7 @@
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         
         <!-- 1. INVESTIMENTO -->
-        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border">
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             Investimento
           </div>
@@ -181,7 +231,7 @@
         </div>
 
         <!-- 2. IMPRESSÕES -->
-        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border">
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             Impressões
           </div>
@@ -194,7 +244,7 @@
         </div>
 
         <!-- 3. CLIQUES -->
-        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border">
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             Cliques
           </div>
@@ -207,7 +257,7 @@
         </div>
 
         <!-- 4. CPM -->
-        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border">
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             CPM
           </div>
@@ -220,7 +270,7 @@
         </div>
 
         <!-- 5. CTR -->
-        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border">
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             CTR
           </div>
@@ -233,7 +283,7 @@
         </div>
 
         <!-- 6. CPC -->
-        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border">
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             CPC
           </div>
@@ -246,7 +296,7 @@
         </div>
 
         <!-- 7. SESSÕES -->
-        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border">
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             Sessões
           </div>
@@ -259,7 +309,7 @@
         </div>
 
         <!-- 8. CPS -->
-        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border">
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             CPS (Custo/Sessão)
           </div>
@@ -272,7 +322,7 @@
         </div>
 
         <!-- 9. LEADS -->
-        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border">
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             Leads
           </div>
@@ -285,7 +335,7 @@
         </div>
 
         <!-- 10. CPL -->
-        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border">
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
             CPL (Custo/Lead)
           </div>
@@ -308,7 +358,7 @@
         <div class="flex items-center justify-between mb-3">
           <div>
             <h3 class="text-sm font-bold text-white">Evolução de Investimento, Leads e CPL</h3>
-            <p class="text-[11px] text-slate-400">Volume financeiro vs leads gerados em Agosto</p>
+            <p class="text-[11px] text-slate-400">Volume financeiro vs leads gerados no período</p>
           </div>
           <div class="flex items-center gap-3 text-xs">
             <span class="flex items-center gap-1 text-slate-300"><span class="w-2.5 h-2.5 rounded-sm bg-v4-red"></span> Invest.</span>
@@ -340,8 +390,8 @@
     <div class="v4-card rounded-xl bg-v4-card border border-v4-border overflow-hidden">
       <div class="p-4 border-b border-v4-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h3 class="text-sm font-bold text-white">Tabela Diária de Performance • Agosto 2026</h3>
-          <p class="text-[11px] text-slate-400">Detalhamento dos 25 dias com dados ativos</p>
+          <h3 class="text-sm font-bold text-white" id="tableTitleText">Tabela Diária de Performance • Cliente Teste</h3>
+          <p class="text-[11px] text-slate-400">Detalhamento dos dias com dados ativos</p>
         </div>
 
         <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -374,7 +424,7 @@
           <!-- Summary Row at Top -->
           <tbody class="bg-slate-900/80 border-b-2 border-v4-border font-bold text-slate-100">
             <tr>
-              <td class="p-3 sticky left-0 z-10 bg-slate-900 border-r border-v4-border text-v4-red font-extrabold">TOTAL AGOSTO</td>
+              <td class="p-3 sticky left-0 z-10 bg-slate-900 border-r border-v4-border text-v4-red font-extrabold" id="tblSummaryRowLabel">TOTAL ACUMULADO</td>
               <td class="p-3 text-right font-mono text-white text-sm" id="tblTotalInvest">R$ 4.419,60</td>
               <td class="p-3 text-right font-mono" id="tblTotalImpr">297.044</td>
               <td class="p-3 text-right font-mono" id="tblTotalClicks">2.505</td>
@@ -396,56 +446,163 @@
 
   </main>
 
-  <!-- GOOGLE SHEETS LIVE CONFIG MODAL -->
-  <div id="configModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
-    <div class="bg-v4-card border border-v4-border rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative">
+  <!-- ======================================================== -->
+  <!-- MODAL: GERENCIAR CLIENTES & GOOGLE SHEETS                 -->
+  <!-- ======================================================== -->
+  <div id="clientManagerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+    <div class="bg-v4-card border border-v4-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 relative max-h-[90vh] flex flex-col">
       
       <!-- Close Button -->
-      <button onclick="closeConfigModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-all">
-        <i data-lucide="x" class="w-4 h-4"></i>
+      <button onclick="closeClientManagerModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-all">
+        <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
       <!-- Modal Header -->
       <div class="flex items-center gap-3">
-        <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          <i data-lucide="sheet" class="w-5 h-5"></i>
+        <div class="p-2.5 rounded-xl bg-v4-red/10 text-v4-red border border-v4-red/20">
+          <i data-lucide="users-round" class="w-5 h-5"></i>
         </div>
         <div>
-          <h3 class="font-bold text-base text-white">Conexão com Google Sheets</h3>
-          <p class="text-xs text-slate-400">Sincronize a planilha direto do Google Drive</p>
+          <h3 class="font-bold text-base text-white">Gerenciar Clientes & Conexões Google Sheets</h3>
+          <p class="text-xs text-slate-400">Configure os clientes e vincule cada um à sua planilha específica do Google Drive</p>
         </div>
       </div>
 
-      <!-- Input Form -->
-      <div class="space-y-4 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-300 mb-1.5">Link ou ID da Planilha Google Sheets</label>
-          <input type="text" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/SEU_ID_AQUI/edit" class="w-full bg-v4-bg border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-emerald-500">
-          <p class="text-[11px] text-slate-400 mt-1">
-            Requisito: A planilha deve estar compartilhada como <strong>"Qualquer pessoa com o link"</strong> como <em>Leitor</em>.
-          </p>
-        </div>
-
-        <!-- Alternative: Local File Upload -->
-        <div class="p-3 rounded-xl bg-v4-bg border border-v4-border flex items-center justify-between">
-          <div>
-            <span class="font-semibold text-slate-300 block">Ou carregar arquivo local</span>
-            <span class="text-[11px] text-slate-400">Upload direto de arquivo .xlsx ou .csv</span>
-          </div>
-          <label class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg cursor-pointer transition-all font-semibold">
-            <input type="file" id="localFileInput" accept=".xlsx,.csv,.json" class="hidden" onchange="handleFileUpload(event)">
-            Escolher Arquivo
-          </label>
-        </div>
-      </div>
-
-      <!-- Modal Actions -->
-      <div class="flex items-center justify-end gap-2.5 pt-2">
-        <button onclick="closeConfigModal()" class="px-3.5 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-lg">
-          Cancelar
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2 border-b border-v4-border pb-2 text-xs">
+        <button onclick="setModalTab('activeClient')" id="tabBtnActiveClient" class="px-3.5 py-1.5 font-bold rounded-lg bg-v4-red text-white transition-all shadow-sm">
+          Cliente Ativo
         </button>
-        <button onclick="saveGoogleSheetsConfig()" class="px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-lg transition-all shadow-sm active:scale-95 flex items-center gap-1.5">
-          <i data-lucide="check" class="w-3.5 h-3.5"></i> Salvar e Sincronizar
+        <button onclick="setModalTab('allClients')" id="tabBtnAllClients" class="px-3.5 py-1.5 font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+          Todos os Clientes (<span id="modalTabCount">3</span>)
+        </button>
+        <button onclick="setModalTab('newClient')" id="tabBtnNewClient" class="px-3.5 py-1.5 font-medium rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all flex items-center gap-1.5">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Novo Cliente
+        </button>
+      </div>
+
+      <!-- TAB CONTENT CONTAINER -->
+      <div class="overflow-y-auto custom-scrollbar flex-1 pr-1">
+
+        <!-- TAB 1: ACTIVE CLIENT SETTINGS -->
+        <div id="tabContentActiveClient" class="space-y-4 text-xs">
+          
+          <div class="p-4 rounded-xl bg-v4-bg border border-v4-border space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div id="modalActiveAvatar" class="w-8 h-8 rounded-lg bg-v4-red flex items-center justify-center font-bold text-white">
+                  CT
+                </div>
+                <div>
+                  <h4 id="modalActiveTitle" class="font-bold text-white text-sm">Cliente Teste</h4>
+                  <p class="text-[11px] text-slate-400" id="modalActiveSubtitle">ID: client_teste</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
+                Selecionado
+              </span>
+            </div>
+
+            <!-- Form Edit Active Client -->
+            <div class="space-y-3 pt-2">
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Nome do Cliente</label>
+                <input type="text" id="editClientNameInput" placeholder="Ex: Acme Store" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-v4-red">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Link ou ID da Planilha Google Sheets</label>
+                <input type="text" id="editClientSheetsUrlInput" placeholder="https://docs.google.com/spreadsheets/d/SEU_ID_AQUI/edit" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-emerald-500">
+                <p class="text-[11px] text-slate-400 mt-1">
+                  Importante: Compartilhe a planilha como <strong>"Qualquer pessoa com o link"</strong> como <em>Leitor</em>.
+                </p>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Nome da Aba (Opcional)</label>
+                <input type="text" id="editClientSheetTabInput" placeholder="Ex: Geral Mensal (ou deixe em branco para detecção automática)" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-slate-500">
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-v4-border/60">
+              <button onclick="saveActiveClientSettings(true)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-all flex items-center gap-1.5 active:scale-95">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Salvar e Sincronizar
+              </button>
+              <button onclick="saveActiveClientSettings(false)" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg transition-all">
+                Salvar Alterações
+              </button>
+            </div>
+          </div>
+
+          <!-- Fallback Upload local para este cliente -->
+          <div class="p-3.5 rounded-xl bg-v4-bg border border-v4-border flex items-center justify-between">
+            <div>
+              <span class="font-semibold text-slate-300 block">Carregar arquivo local deste cliente</span>
+              <span class="text-[11px] text-slate-400">Importe dados diretamente de arquivo .xlsx ou .csv</span>
+            </div>
+            <label class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg cursor-pointer transition-all font-semibold shrink-0">
+              <input type="file" accept=".xlsx,.csv,.json" class="hidden" onchange="handleFileUpload(event)">
+              Escolher Arquivo
+            </label>
+          </div>
+
+        </div>
+
+        <!-- TAB 2: ALL CLIENTS LIST -->
+        <div id="tabContentAllClients" class="space-y-3 text-xs hidden">
+          <div class="flex items-center justify-between text-slate-400 text-[11px] px-1">
+            <span>Selecione um cliente para analisar ou edite suas conexões:</span>
+            <button onclick="syncAllClients()" class="text-emerald-400 hover:underline flex items-center gap-1 font-semibold">
+              <i data-lucide="refresh-cw" class="w-3 h-3"></i> Sincronizar Todos
+            </button>
+          </div>
+
+          <div class="space-y-2" id="allClientsListContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- TAB 3: NEW CLIENT FORM -->
+        <div id="tabContentNewClient" class="space-y-4 text-xs hidden">
+          <div class="p-4 rounded-xl bg-v4-bg border border-v4-border space-y-3">
+            <h4 class="font-bold text-white text-sm">Cadastrar Novo Cliente</h4>
+            <p class="text-[11px] text-slate-400">Adicione uma nova conta e vincule com sua respectiva planilha do Google Sheets.</p>
+
+            <div class="space-y-3 pt-1">
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Nome do Cliente *</label>
+                <input type="text" id="newClientNameInput" placeholder="Ex: E-commerce SuperModa" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-emerald-500">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Link ou ID da Planilha Google Sheets</label>
+                <input type="text" id="newClientSheetsUrlInput" placeholder="https://docs.google.com/spreadsheets/d/SEU_ID_AQUI/edit" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-emerald-500">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Nome da Aba (Opcional)</label>
+                <input type="text" id="newClientSheetTabInput" placeholder="Ex: Geral Mensal" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-slate-500">
+              </div>
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2">
+              <button onclick="setModalTab('allClients')" class="px-3.5 py-2 text-slate-400 hover:text-white rounded-lg">
+                Cancelar
+              </button>
+              <button onclick="createNewClientSubmit()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-all flex items-center gap-1.5 active:scale-95 shadow-sm">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Cadastrar e Ativar
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between pt-3 border-t border-v4-border text-xs">
+        <span class="text-slate-500 text-[11px]">As configurações ficam salvas localmente no navegador.</span>
+        <button onclick="closeClientManagerModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition-all">
+          Fechar
         </button>
       </div>
 
@@ -453,15 +610,21 @@
   </div>
 
   <!-- TOAST NOTIFICATION -->
-  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold shadow-xl flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300">
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold shadow-2xl flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300">
     <i data-lucide="check-circle-2" class="w-4 h-4"></i>
-    <span id="toastMessage">Sincronizado com sucesso!</span>
+    <span id="toastMessage">Operação realizada com sucesso!</span>
   </div>
 
-  <!-- JAVASCRIPT LOGIC -->
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT LOGIC & MULTI-CLIENT GOOGLE SHEETS ENGINE     -->
+  <!-- ======================================================== -->
   <script>
+    // Storage Keys
+    const CLIENTS_STORAGE_KEY = 'v4_dashboard_clients_v2';
+    const ACTIVE_CLIENT_STORAGE_KEY = 'v4_dashboard_active_client_id';
+
     // Baseline dataset extracted from "Teste - 2026.xlsx" for August 2026
-    const AUGUST_DATA = {
+    const DEFAULT_DATA_CLIENT_TESTE = {
       summary: {
         consolidado: {
           investimento: 4419.60,
@@ -529,8 +692,60 @@
       ]
     };
 
+    // Initial default clients state
+    const DEFAULT_CLIENTS = [
+      {
+        id: "client_teste",
+        name: "Cliente Teste",
+        sheetsUrl: "",
+        sheetTab: "Geral Mensal",
+        color: "from-v4-red to-pink-600",
+        lastSync: "2026-08-26T14:30:00Z",
+        data: JSON.parse(JSON.stringify(DEFAULT_DATA_CLIENT_TESTE))
+      },
+      {
+        id: "client_alfa",
+        name: "Alpha E-commerce",
+        sheetsUrl: "",
+        sheetTab: "Geral Mensal",
+        color: "from-blue-600 to-cyan-500",
+        lastSync: null,
+        data: {
+          summary: {
+            consolidado: { investimento: 7850.00, impressoes: 450200, cliques: 4980, cpm: 17.43, ctr: 1.10, cpc: 1.57, sessoes: 4200, cps: 1.86, leads: 280.0, cpl: 28.03 },
+            meta: { investimento: 4200.00, impressoes: 380000, cliques: 2100, cpm: 11.05, ctr: 0.55, cpc: 2.00, sessoes: 0, cps: 0, leads: 190.0, cpl: 22.10 },
+            google: { investimento: 3650.00, impressoes: 70200, cliques: 2880, cpm: 51.99, ctr: 4.10, cpc: 1.26, sessoes: 0, cps: 0, leads: 90.0, cpl: 40.55 }
+          },
+          daily: [
+            {"date": "2026-08-01", "day": 1, "investimento": 310.0, "meta_investimento": 160.0, "google_investimento": 150.0, "impressoes": 18000, "meta_impressoes": 15000, "google_impressoes": 3000, "cliques": 190, "meta_cliques": 80, "google_cliques": 110, "sessoes": 160, "leads": 12.0, "meta_leads": 8.0, "google_leads": 4.0, "cpm": 17.22, "ctr": 1.05, "cpc": 1.63, "cps": 1.93, "cpl": 25.83},
+            {"date": "2026-08-02", "day": 2, "investimento": 295.0, "meta_investimento": 155.0, "google_investimento": 140.0, "impressoes": 17500, "meta_impressoes": 14500, "google_impressoes": 3000, "cliques": 185, "meta_cliques": 75, "google_cliques": 110, "sessoes": 155, "leads": 11.0, "meta_leads": 7.0, "google_leads": 4.0, "cpm": 16.85, "ctr": 1.05, "cpc": 1.59, "cps": 1.90, "cpl": 26.81}
+          ]
+        }
+      },
+      {
+        id: "client_beta",
+        name: "Beta B2B Tech",
+        sheetsUrl: "",
+        sheetTab: "Geral Mensal",
+        color: "from-amber-500 to-emerald-500",
+        lastSync: null,
+        data: {
+          summary: {
+            consolidado: { investimento: 3200.00, impressoes: 120000, cliques: 1450, cpm: 26.66, ctr: 1.20, cpc: 2.20, sessoes: 1180, cps: 2.71, leads: 48.0, cpl: 66.66 },
+            meta: { investimento: 1200.00, impressoes: 90000, cliques: 450, cpm: 13.33, ctr: 0.50, cpc: 2.66, sessoes: 0, cps: 0, leads: 22.0, cpl: 54.54 },
+            google: { investimento: 2000.00, impressoes: 30000, cliques: 1000, cpm: 66.66, ctr: 3.33, cpc: 2.00, sessoes: 0, cps: 0, leads: 26.0, cpl: 76.92 }
+          },
+          daily: [
+            {"date": "2026-08-01", "day": 1, "investimento": 140.0, "meta_investimento": 50.0, "google_investimento": 90.0, "impressoes": 5200, "meta_impressoes": 4000, "google_impressoes": 1200, "cliques": 65, "meta_cliques": 20, "google_cliques": 45, "sessoes": 55, "leads": 2.0, "meta_leads": 1.0, "google_leads": 1.0, "cpm": 26.92, "ctr": 1.25, "cpc": 2.15, "cps": 2.54, "cpl": 70.0}
+          ]
+        }
+      }
+    ];
+
+    // State Variables
+    let clients = [];
+    let activeClientId = '';
     let currentChannel = 'consolidado'; // 'consolidado', 'meta', 'google'
-    let liveAugustData = JSON.parse(JSON.stringify(AUGUST_DATA));
     let charts = {};
 
     // Helper formatters
@@ -547,30 +762,244 @@
       return val.toFixed(2).replace('.', ',') + '%';
     };
 
+    // Helper: Extract Spreadsheet ID from Google Drive URL or direct ID
+    function extractSpreadsheetId(urlOrId) {
+      if (!urlOrId) return '';
+      const match = urlOrId.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      return match ? match[1] : urlOrId.trim();
+    }
+
+    // Helper: Generate Initials
+    function getInitials(name) {
+      if (!name) return 'V4';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+    }
+
+    // Helper: Palette Generator for new clients
+    const COLOR_PALETTES = [
+      'from-v4-red to-pink-600',
+      'from-blue-600 to-cyan-500',
+      'from-amber-500 to-emerald-500',
+      'from-purple-600 to-indigo-500',
+      'from-emerald-500 to-teal-400',
+      'from-rose-500 to-orange-400'
+    ];
+
+    // ==========================================
+    // INITIALIZATION & CLIENT STORAGE
+    // ==========================================
     window.addEventListener('DOMContentLoaded', () => {
+      initClients();
       lucide.createIcons();
-      loadSavedConfig();
-      updateDashboard();
+      document.addEventListener('click', handleGlobalClick);
     });
 
+    function initClients() {
+      const savedClientsJson = localStorage.getItem(CLIENTS_STORAGE_KEY);
+      if (savedClientsJson) {
+        try {
+          clients = JSON.parse(savedClientsJson);
+        } catch (e) {
+          console.error('Erro ao ler clientes salvos:', e);
+          clients = JSON.parse(JSON.stringify(DEFAULT_CLIENTS));
+        }
+      } else {
+        clients = JSON.parse(JSON.stringify(DEFAULT_CLIENTS));
+        // Check if user previously had a legacy single sheets url
+        const legacyUrl = localStorage.getItem('v4_sheets_url');
+        if (legacyUrl && clients[0]) {
+          clients[0].sheetsUrl = legacyUrl;
+        }
+        saveClients();
+      }
+
+      // Restore active client ID or default to first
+      const savedActiveId = localStorage.getItem(ACTIVE_CLIENT_STORAGE_KEY);
+      if (savedActiveId && clients.some(c => c.id === savedActiveId)) {
+        activeClientId = savedActiveId;
+      } else if (clients.length > 0) {
+        activeClientId = clients[0].id;
+      }
+
+      renderClientDropdown();
+      updateDashboard();
+    }
+
+    function saveClients() {
+      localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
+      localStorage.setItem(ACTIVE_CLIENT_STORAGE_KEY, activeClientId);
+      document.getElementById('clientCountBadge').innerText = clients.length;
+      document.getElementById('modalTabCount').innerText = clients.length;
+    }
+
+    function getActiveClient() {
+      return clients.find(c => c.id === activeClientId) || clients[0];
+    }
+
+    // ==========================================
+    // CLIENT SELECTION & DROPDOWN UI
+    // ==========================================
+    function toggleClientDropdown(event) {
+      event.stopPropagation();
+      const menu = document.getElementById('clientDropdownMenu');
+      const chevron = document.getElementById('clientDropdownChevron');
+      const isHidden = menu.classList.contains('hidden');
+      
+      if (isHidden) {
+        menu.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+        renderClientDropdown();
+        document.getElementById('clientSearchInput').focus();
+      } else {
+        closeClientDropdown();
+      }
+    }
+
+    function closeClientDropdown() {
+      const menu = document.getElementById('clientDropdownMenu');
+      const chevron = document.getElementById('clientDropdownChevron');
+      if (menu) menu.classList.add('hidden');
+      if (chevron) chevron.classList.remove('rotate-180');
+    }
+
+    function handleGlobalClick(e) {
+      const menu = document.getElementById('clientDropdownMenu');
+      const btn = document.getElementById('clientDropdownBtn');
+      if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
+        closeClientDropdown();
+      }
+    }
+
+    function renderClientDropdown(filterTerm = '') {
+      const container = document.getElementById('clientDropdownList');
+      if (!container) return;
+
+      const q = filterTerm.toLowerCase().trim();
+      const filtered = clients.filter(c => c.name.toLowerCase().includes(q));
+
+      container.innerHTML = '';
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-4 text-center text-xs text-slate-500">
+            Nenhum cliente encontrado.
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(client => {
+        const isActive = client.id === activeClientId;
+        const initials = getInitials(client.name);
+        const hasSheets = Boolean(client.sheetsUrl && extractSpreadsheetId(client.sheetsUrl));
+        const colorClass = client.color || 'from-v4-red to-pink-600';
+
+        const item = document.createElement('div');
+        item.className = `flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
+          isActive 
+            ? 'bg-slate-800/90 text-white border border-v4-borderLight' 
+            : 'hover:bg-slate-800/50 text-slate-300 hover:text-white'
+        }`;
+        item.onclick = () => {
+          selectClient(client.id);
+          closeClientDropdown();
+        };
+
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr ${colorClass} flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm">
+              ${initials}
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold truncate ${isActive ? 'text-white' : 'text-slate-200'}">${client.name}</div>
+              <div class="text-[10px] text-slate-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full ${hasSheets ? 'bg-emerald-400' : 'bg-slate-500'}"></span>
+                <span class="truncate">${hasSheets ? 'Sheets Conectado' : 'Sem planilha'}</span>
+              </div>
+            </div>
+          </div>
+          ${isActive ? '<i data-lucide="check" class="w-4 h-4 text-v4-red shrink-0"></i>' : ''}
+        `;
+
+        container.appendChild(item);
+      });
+
+      lucide.createIcons();
+    }
+
+    function filterClientList(val) {
+      renderClientDropdown(val);
+    }
+
+    function selectClient(clientId) {
+      activeClientId = clientId;
+      saveClients();
+      updateDashboard();
+      showToast(`Cliente selecionado: ${getActiveClient().name}`);
+    }
+
+    // ==========================================
+    // DASHBOARD RENDERING FOR ACTIVE CLIENT
+    // ==========================================
     function setChannel(channel) {
       currentChannel = channel;
       ['consolidado', 'meta', 'google'].forEach(c => {
         const btn = document.getElementById(`btn${c.charAt(0).toUpperCase() + c.slice(1)}`);
         if (c === channel) {
-          btn.className = "flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-bold rounded-md transition-all text-white bg-v4-red shadow-sm shadow-v4-red/30";
+          btn.className = "flex-1 md:flex-none px-3.5 py-1.5 text-xs font-bold rounded-md transition-all text-white bg-v4-red shadow-sm shadow-v4-red/30";
         } else {
-          btn.className = "flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white";
+          btn.className = "flex-1 md:flex-none px-3.5 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white";
         }
       });
       updateDashboard();
     }
 
     function updateDashboard() {
-      const data = liveAugustData.summary[currentChannel];
+      const client = getActiveClient();
+      if (!client) return;
+
+      const initials = getInitials(client.name);
+      const colorClass = client.color || 'from-v4-red to-pink-600';
+      const hasSheets = Boolean(client.sheetsUrl && extractSpreadsheetId(client.sheetsUrl));
+      const sheetId = extractSpreadsheetId(client.sheetsUrl);
+
+      // 1. Update Header Info
+      document.getElementById('pageTitle').innerText = `Dashboard de Tráfego • ${client.name} | V4 Company`;
+      document.getElementById('activeClientName').innerText = client.name;
+      document.getElementById('tableTitleText').innerText = `Tabela Diária de Performance • ${client.name}`;
+      
+      const avatarEl = document.getElementById('activeClientAvatar');
+      avatarEl.className = `w-7 h-7 rounded-lg bg-gradient-to-tr ${colorClass} flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm`;
+      avatarEl.innerText = initials;
+
+      const sourceBadge = document.getElementById('activeClientSourceBadge');
+      if (hasSheets) {
+        sourceBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Google Sheets`;
+        document.getElementById('syncSourceText').innerText = `Planilha: ${sheetId.substring(0, 10)}...`;
+        document.getElementById('syncDotStatus').className = 'w-2 h-2 rounded-full bg-emerald-400';
+      } else {
+        sourceBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Modo Local`;
+        document.getElementById('syncSourceText').innerText = `Planilha não vinculada`;
+        document.getElementById('syncDotStatus').className = 'w-2 h-2 rounded-full bg-amber-400';
+      }
+
+      if (client.lastSync) {
+        const d = new Date(client.lastSync);
+        document.getElementById('lastSyncTimeText').innerText = `Atualizado às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      } else {
+        document.getElementById('lastSyncTimeText').innerText = 'Ainda não sincronizado';
+      }
+
+      // 2. Fetch Active Client Data & Summary
+      const clientData = client.data || JSON.parse(JSON.stringify(DEFAULT_DATA_CLIENT_TESTE));
+      const data = (clientData.summary && clientData.summary[currentChannel]) || DEFAULT_DATA_CLIENT_TESTE.summary[currentChannel];
       const isConsolidado = currentChannel === 'consolidado';
 
-      // Update 10 Cards
+      // 3. Update 10 Cards
       document.getElementById('cardInvestimento').innerText = fmtCurrency(data.investimento);
       document.getElementById('cardImpressoes').innerText = fmtNumber(data.impressoes);
       document.getElementById('cardCliques').innerText = fmtNumber(data.cliques);
@@ -581,6 +1010,16 @@
       document.getElementById('cardCPS').innerText = isConsolidado ? fmtCurrency(data.cps) : fmtCurrency(data.cpc);
       document.getElementById('cardLeads').innerText = fmtNumber(data.leads);
       document.getElementById('cardCPL').innerText = fmtCurrency(data.cpl);
+
+      // Subtitles on cards for share analysis
+      const metaInv = clientData.summary?.meta?.investimento || 0;
+      const gooInv = clientData.summary?.google?.investimento || 0;
+      const totalInv = metaInv + gooInv;
+      if (totalInv > 0) {
+        const metaPct = Math.round((metaInv / totalInv) * 100);
+        const gooPct = 100 - metaPct;
+        document.getElementById('subInvestimento').innerText = `Meta ${metaPct}% • Google ${gooPct}%`;
+      }
 
       // Summary Table Row
       document.getElementById('tblTotalInvest').innerText = fmtCurrency(data.investimento);
@@ -594,34 +1033,38 @@
       document.getElementById('tblTotalLeads').innerText = fmtNumber(data.leads);
       document.getElementById('tblTotalCPL').innerText = fmtCurrency(data.cpl);
 
-      renderCharts();
-      renderDailyTable();
+      renderCharts(clientData);
+      renderDailyTable(clientData);
       lucide.createIcons();
     }
 
-    function renderCharts() {
-      const dates = liveAugustData.daily.map(d => `${d.day < 10 ? '0' + d.day : d.day}/08`);
+    function renderCharts(clientData) {
+      const dailyRecords = clientData.daily || [];
+      
+      const dates = dailyRecords.length > 0 
+        ? dailyRecords.map(d => d.date ? d.date.split('-').slice(1).reverse().join('/') : (d.day < 10 ? '0' + d.day : d.day) + '/08')
+        : ['01/08', '02/08', '03/08'];
       
       let investSeries, leadsSeries, cplSeries, clicksSeries, sessionsSeries;
 
       if (currentChannel === 'meta') {
-        investSeries = liveAugustData.daily.map(d => d.meta_investimento);
-        leadsSeries = liveAugustData.daily.map(d => d.meta_leads);
-        cplSeries = liveAugustData.daily.map(d => d.meta_leads > 0 ? Number((d.meta_investimento / d.meta_leads).toFixed(2)) : 0);
-        clicksSeries = liveAugustData.daily.map(d => d.meta_cliques);
-        sessionsSeries = liveAugustData.daily.map(d => d.meta_cliques);
+        investSeries = dailyRecords.map(d => d.meta_investimento ?? (d.investimento * 0.45));
+        leadsSeries = dailyRecords.map(d => d.meta_leads ?? Math.round(d.leads * 0.7));
+        cplSeries = dailyRecords.map((d, i) => leadsSeries[i] > 0 ? Number((investSeries[i] / leadsSeries[i]).toFixed(2)) : 0);
+        clicksSeries = dailyRecords.map(d => d.meta_cliques ?? Math.round(d.cliques * 0.35));
+        sessionsSeries = dailyRecords.map(d => d.meta_cliques ?? Math.round(d.cliques * 0.35));
       } else if (currentChannel === 'google') {
-        investSeries = liveAugustData.daily.map(d => d.google_investimento);
-        leadsSeries = liveAugustData.daily.map(d => d.google_leads);
-        cplSeries = liveAugustData.daily.map(d => d.google_leads > 0 ? Number((d.google_investimento / d.google_leads).toFixed(2)) : 0);
-        clicksSeries = liveAugustData.daily.map(d => d.google_cliques);
-        sessionsSeries = liveAugustData.daily.map(d => d.google_cliques);
+        investSeries = dailyRecords.map(d => d.google_investimento ?? (d.investimento * 0.55));
+        leadsSeries = dailyRecords.map(d => d.google_leads ?? Math.round(d.leads * 0.3));
+        cplSeries = dailyRecords.map((d, i) => leadsSeries[i] > 0 ? Number((investSeries[i] / leadsSeries[i]).toFixed(2)) : 0);
+        clicksSeries = dailyRecords.map(d => d.google_cliques ?? Math.round(d.cliques * 0.65));
+        sessionsSeries = dailyRecords.map(d => d.google_cliques ?? Math.round(d.cliques * 0.65));
       } else {
-        investSeries = liveAugustData.daily.map(d => d.investimento);
-        leadsSeries = liveAugustData.daily.map(d => d.leads);
-        cplSeries = liveAugustData.daily.map(d => d.cpl);
-        clicksSeries = liveAugustData.daily.map(d => d.cliques);
-        sessionsSeries = liveAugustData.daily.map(d => d.sessoes);
+        investSeries = dailyRecords.map(d => d.investimento);
+        leadsSeries = dailyRecords.map(d => d.leads);
+        cplSeries = dailyRecords.map(d => d.cpl ?? (d.leads > 0 ? Number((d.investimento / d.leads).toFixed(2)) : 0));
+        clicksSeries = dailyRecords.map(d => d.cliques);
+        sessionsSeries = dailyRecords.map(d => d.sessoes ?? d.cliques);
       }
 
       // 1. Chart Evolution (Investimento vs Leads vs CPL)
@@ -652,7 +1095,7 @@
         yaxis: [
           {
             title: { text: 'Investimento (R$)', style: { color: '#ff2d55', fontSize: '10px' } },
-            labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v) => 'R$ ' + v.toFixed(0) }
+            labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v) => 'R$ ' + Number(v).toFixed(0) }
           },
           {
             show: false,
@@ -661,7 +1104,7 @@
           {
             opposite: true,
             title: { text: 'CPL (R$)', style: { color: '#f59e0b', fontSize: '10px' } },
-            labels: { style: { colors: '#f59e0b', fontSize: '10px' }, formatter: (v) => 'R$ ' + v.toFixed(0) }
+            labels: { style: { colors: '#f59e0b', fontSize: '10px' }, formatter: (v) => 'R$ ' + Number(v).toFixed(0) }
           }
         ],
         grid: { borderColor: '#1f293d', strokeDashArray: 3 },
@@ -702,53 +1145,67 @@
     }
 
     // Render Daily Performance Table
-    function renderDailyTable() {
+    function renderDailyTable(clientData) {
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
 
-      liveAugustData.daily.forEach(d => {
+      const dailyRecords = clientData.daily || [];
+      if (dailyRecords.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="11" class="p-4 text-center text-slate-500 font-sans">
+              Nenhum registro diário carregado para este cliente. Sincronize a planilha do Google Sheets.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      dailyRecords.forEach(d => {
         let inv, impr, clk, cpm, ctr, cpc, sess, cps, lds, cpl;
 
         if (currentChannel === 'meta') {
-          inv = d.meta_investimento;
-          impr = d.meta_impressoes;
-          clk = d.meta_cliques;
+          inv = d.meta_investimento ?? (d.investimento * 0.45);
+          impr = d.meta_impressoes ?? (d.impressoes * 0.9);
+          clk = d.meta_cliques ?? (d.cliques * 0.35);
           cpm = impr > 0 ? (inv / impr * 1000) : 0;
           ctr = impr > 0 ? (clk / impr * 100) : 0;
           cpc = clk > 0 ? (inv / clk) : 0;
-          sess = d.meta_cliques;
+          sess = clk;
           cps = cpc;
-          lds = d.meta_leads;
+          lds = d.meta_leads ?? (d.leads * 0.7);
           cpl = lds > 0 ? (inv / lds) : 0;
         } else if (currentChannel === 'google') {
-          inv = d.google_investimento;
-          impr = d.google_impressoes;
-          clk = d.google_cliques;
+          inv = d.google_investimento ?? (d.investimento * 0.55);
+          impr = d.google_impressoes ?? (d.impressoes * 0.1);
+          clk = d.google_cliques ?? (d.cliques * 0.65);
           cpm = impr > 0 ? (inv / impr * 1000) : 0;
           ctr = impr > 0 ? (clk / impr * 100) : 0;
           cpc = clk > 0 ? (inv / clk) : 0;
-          sess = d.google_cliques;
+          sess = clk;
           cps = cpc;
-          lds = d.google_leads;
+          lds = d.google_leads ?? (d.leads * 0.3);
           cpl = lds > 0 ? (inv / lds) : 0;
         } else {
           inv = d.investimento;
           impr = d.impressoes;
           clk = d.cliques;
-          cpm = d.cpm;
-          ctr = d.ctr;
-          cpc = d.cpc;
-          sess = d.sessoes;
-          cps = d.cps;
+          cpm = d.cpm ?? (impr > 0 ? (inv / impr * 1000) : 0);
+          ctr = d.ctr ?? (impr > 0 ? (clk / impr * 100) : 0);
+          cpc = d.cpc ?? (clk > 0 ? (inv / clk) : 0);
+          sess = d.sessoes ?? clk;
+          cps = d.cps ?? (sess > 0 ? (inv / sess) : 0);
           lds = d.leads;
-          cpl = d.cpl;
+          cpl = d.cpl ?? (lds > 0 ? (inv / lds) : 0);
         }
+
+        const dateFormatted = d.date ? d.date.split('-').reverse().join('/') : `${d.day < 10 ? '0' + d.day : d.day}/08/2026`;
 
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 transition-colors';
         tr.innerHTML = `
           <td class="p-3 sticky left-0 z-10 bg-v4-card border-r border-v4-border text-slate-300 font-sans">
-            ${d.day < 10 ? '0' + d.day : d.day}/08/2026
+            ${dateFormatted}
           </td>
           <td class="p-3 text-right text-slate-200 font-semibold">${fmtCurrency(inv)}</td>
           <td class="p-3 text-right text-slate-300">${fmtNumber(impr)}</td>
@@ -775,20 +1232,16 @@
       });
     }
 
-    // ROBUST GOOGLE SHEETS JSONP SYNC (NO CORS RESTRICTIONS EVEN ON file://)
-    function extractSpreadsheetId(urlOrId) {
-      if (!urlOrId) return '';
-      const match = urlOrId.match(/\/d\/([a-zA-Z0-9-_]+)/);
-      return match ? match[1] : urlOrId.trim();
-    }
-
+    // ========================================================
+    // GOOGLE SHEETS LIVE SYNC ENGINE (JSONP / GVIZ API)
+    // ========================================================
     function fetchGVizJSONP(sheetId, sheetName) {
       return new Promise((resolve, reject) => {
         const callbackName = 'gviz_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
         const timeout = setTimeout(() => {
           cleanup();
-          reject(new Error('Tempo limite ao conectar. Verifique se o link da planilha está correto e compartilhado como "Qualquer pessoa com o link".'));
-        }, 10000);
+          reject(new Error('Tempo limite de conexão ao Google Sheets. Verifique se o link está correto e compartilhado como "Qualquer pessoa com o link".'));
+        }, 12000);
 
         function cleanup() {
           clearTimeout(timeout);
@@ -804,7 +1257,7 @@
           } else if (response && response.errors) {
             reject(new Error(response.errors.map(e => e.message || e.detailed_message).join(', ')));
           } else {
-            reject(new Error('Resposta inválida do Google Sheets'));
+            reject(new Error('Resposta inválida recebida do Google Sheets.'));
           }
         };
 
@@ -814,65 +1267,105 @@
         script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${callbackName}${sheetParam}`;
         script.onerror = function() {
           cleanup();
-          reject(new Error('Não foi possível carregar a planilha. Verifique se o link do Google Sheets está compartilhado como "Qualquer pessoa com o link" como Leitor.'));
+          reject(new Error('Não foi possível carregar a planilha. Verifique as permissões de compartilhamento ("Qualquer pessoa com o link" como Leitor).'));
         };
         document.body.appendChild(script);
       });
     }
 
-    async function syncFromGoogleSheets() {
-      const syncIcon = document.getElementById('syncIcon');
-      syncIcon.classList.add('animate-spin');
+    // Sincronizar o cliente atualmente selecionado
+    async function syncCurrentClient() {
+      const client = getActiveClient();
+      if (!client) return;
 
-      const savedUrl = localStorage.getItem('v4_sheets_url') || '';
-      const sheetId = extractSpreadsheetId(savedUrl);
-
+      const sheetId = extractSpreadsheetId(client.sheetsUrl);
       if (!sheetId) {
-        syncIcon.classList.remove('animate-spin');
-        openConfigModal();
+        openEditActiveClientModal();
+        showToast('Adicione o link do Google Sheets para este cliente');
+        return;
+      }
+
+      await syncClientById(client.id, true);
+    }
+
+    // Sincronizar qualquer cliente por ID
+    async function syncClientById(clientId, showAlert = false) {
+      const client = clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      const syncIcon = document.getElementById('syncIcon');
+      if (syncIcon) syncIcon.classList.add('animate-spin');
+
+      const sheetId = extractSpreadsheetId(client.sheetsUrl);
+      if (!sheetId) {
+        if (syncIcon) syncIcon.classList.remove('animate-spin');
         return;
       }
 
       try {
-        // Fetch using JSONP (bypasses browser CORS completely)
-        const table = await fetchGVizJSONP(sheetId, 'Geral Mensal');
-        parseGVizTable(table);
-
-        const now = new Date();
-        document.getElementById('lastSyncTimeText').innerText = `Sincronizado às ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-        showToast('Planilha sincronizada com sucesso!');
-      } catch (err) {
-        console.warn('Tentando sincronização sem especificar aba...', err);
+        const tabToTry = client.sheetTab || 'Geral Mensal';
+        let table;
         try {
-          // Fallback: try first sheet without sheet param
-          const table = await fetchGVizJSONP(sheetId, '');
-          parseGVizTable(table);
-          const now = new Date();
-          document.getElementById('lastSyncTimeText').innerText = `Sincronizado às ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-          showToast('Planilha sincronizada com sucesso!');
-        } catch (err2) {
-          alert('Aviso de Sincronização:\n\n' + err2.message + '\n\nCertifique-se de que a planilha está compartilhada com "Qualquer pessoa com o link" como Leitor.');
+          table = await fetchGVizJSONP(sheetId, tabToTry);
+        } catch (tabErr) {
+          console.warn(`Tentando aba padrão sem nome para ${client.name}...`, tabErr);
+          table = await fetchGVizJSONP(sheetId, '');
+        }
+
+        const parsedData = parseGVizData(table, client.data);
+        client.data = parsedData;
+        client.lastSync = new Date().toISOString();
+        saveClients();
+
+        if (clientId === activeClientId) {
+          updateDashboard();
+        }
+        renderClientDropdown();
+        renderAllClientsModalList();
+
+        showToast(`Cliente ${client.name} sincronizado com sucesso!`);
+      } catch (err) {
+        console.error('Erro de sincronização:', err);
+        if (showAlert) {
+          alert(`Aviso de Sincronização (${client.name}):\n\n${err.message}\n\nCertifique-se de que a planilha está compartilhada com "Qualquer pessoa com o link" como Leitor.`);
+        } else {
+          showToast(`Erro ao sincronizar ${client.name}: verifique as permissões`);
         }
       } finally {
-        syncIcon.classList.remove('animate-spin');
+        if (syncIcon) syncIcon.classList.remove('animate-spin');
       }
     }
 
-    function parseGVizTable(table) {
-      if (!table || !table.rows) return;
+    async function syncAllClients() {
+      let count = 0;
+      for (const client of clients) {
+        if (client.sheetsUrl && extractSpreadsheetId(client.sheetsUrl)) {
+          await syncClientById(client.id, false);
+          count++;
+        }
+      }
+      showToast(`${count} cliente(s) com planilha sincronizados!`);
+    }
+
+    // Parser robusto para tabela GViz do Google Sheets
+    function parseGVizData(table, existingData) {
+      if (!table || !table.rows) return existingData;
 
       const cols = table.cols || [];
       const rows = table.rows || [];
 
-      // Find August column index
-      let augCol = -1;
+      // Create a fresh clone of base structure
+      const resultData = JSON.parse(JSON.stringify(existingData || DEFAULT_DATA_CLIENT_TESTE));
+
+      // Find August / Month Column
+      let targetCol = -1;
       cols.forEach((col, idx) => {
         const label = (col.label || '').toLowerCase();
-        if (label.includes('08') || label.includes('ago') || label.includes('august')) {
-          augCol = idx;
+        if (label.includes('08') || label.includes('ago') || label.includes('august') || label.includes('total') || label.includes('consolidado')) {
+          targetCol = idx;
         }
       });
-      if (augCol === -1) augCol = 8; // default to col index 8 (August)
+      if (targetCol === -1) targetCol = 8; // fallback column index
 
       const extracted = {};
       rows.forEach(r => {
@@ -880,7 +1373,7 @@
         const metricName = (r.c[0]?.v || '').toString().trim().toUpperCase();
         if (!metricName) return;
 
-        const cell = r.c[augCol];
+        const cell = r.c[targetCol] || r.c[1];
         let val = cell ? cell.v : null;
         if (typeof val === 'string') {
           val = val.replace('R$', '').replace('%', '').trim().replace(/\./g, '').replace(',', '.');
@@ -891,27 +1384,29 @@
         }
       });
 
-      // Update consolidated metrics if available
       if (extracted['INVESTIMENTO'] !== undefined) {
-        liveAugustData.summary.consolidado.investimento = extracted['INVESTIMENTO'];
-        if (extracted['IMPRESSÕES']) liveAugustData.summary.consolidado.impressoes = extracted['IMPRESSÕES'];
-        if (extracted['CLIQUES']) liveAugustData.summary.consolidado.cliques = extracted['CLIQUES'];
-        if (extracted['CPM']) liveAugustData.summary.consolidado.cpm = extracted['CPM'];
-        if (extracted['CTR']) liveAugustData.summary.consolidado.ctr = extracted['CTR'] < 1 ? extracted['CTR'] * 100 : extracted['CTR'];
-        if (extracted['CPC']) liveAugustData.summary.consolidado.cpc = extracted['CPC'];
-        if (extracted['SESSÕES']) liveAugustData.summary.consolidado.sessoes = extracted['SESSÕES'];
-        if (extracted['CPS']) liveAugustData.summary.consolidado.cps = extracted['CPS'];
-        if (extracted['LEADS']) liveAugustData.summary.consolidado.leads = extracted['LEADS'];
-        if (extracted['CPL']) liveAugustData.summary.consolidado.cpl = extracted['CPL'];
-
-        updateDashboard();
+        resultData.summary.consolidado.investimento = extracted['INVESTIMENTO'];
+        if (extracted['IMPRESSÕES']) resultData.summary.consolidado.impressoes = extracted['IMPRESSÕES'];
+        if (extracted['CLIQUES']) resultData.summary.consolidado.cliques = extracted['CLIQUES'];
+        if (extracted['CPM']) resultData.summary.consolidado.cpm = extracted['CPM'];
+        if (extracted['CTR']) resultData.summary.consolidado.ctr = extracted['CTR'] < 1 ? extracted['CTR'] * 100 : extracted['CTR'];
+        if (extracted['CPC']) resultData.summary.consolidado.cpc = extracted['CPC'];
+        if (extracted['SESSÕES']) resultData.summary.consolidado.sessoes = extracted['SESSÕES'];
+        if (extracted['CPS']) resultData.summary.consolidado.cps = extracted['CPS'];
+        if (extracted['LEADS']) resultData.summary.consolidado.leads = extracted['LEADS'];
+        if (extracted['CPL']) resultData.summary.consolidado.cpl = extracted['CPL'];
       }
+
+      return resultData;
     }
 
-    // Local file upload handler (Excel XLSX / CSV)
+    // Upload local de arquivo (.xlsx / .csv)
     function handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
+
+      const client = getActiveClient();
+      if (!client) return;
 
       const reader = new FileReader();
       reader.onload = function(e) {
@@ -937,21 +1432,24 @@
                 val = Number(val.replace('R$', '').replace('%', '').replace(/\./g, '').replace(',', '.').trim());
               }
               if (typeof val === 'number' && !isNaN(val)) {
-                if (metric === 'INVESTIMENTO') liveAugustData.summary.consolidado.investimento = val;
-                if (metric === 'IMPRESSÕES') liveAugustData.summary.consolidado.impressoes = val;
-                if (metric === 'CLIQUES') liveAugustData.summary.consolidado.cliques = val;
-                if (metric === 'CPM') liveAugustData.summary.consolidado.cpm = val;
-                if (metric === 'CTR') liveAugustData.summary.consolidado.ctr = val < 1 ? val * 100 : val;
-                if (metric === 'CPC') liveAugustData.summary.consolidado.cpc = val;
-                if (metric === 'SESSÕES') liveAugustData.summary.consolidado.sessoes = val;
-                if (metric === 'CPS') liveAugustData.summary.consolidado.cps = val;
-                if (metric === 'LEADS') liveAugustData.summary.consolidado.leads = val;
-                if (metric === 'CPL') liveAugustData.summary.consolidado.cpl = val;
+                if (metric === 'INVESTIMENTO') client.data.summary.consolidado.investimento = val;
+                if (metric === 'IMPRESSÕES') client.data.summary.consolidado.impressoes = val;
+                if (metric === 'CLIQUES') client.data.summary.consolidado.cliques = val;
+                if (metric === 'CPM') client.data.summary.consolidado.cpm = val;
+                if (metric === 'CTR') client.data.summary.consolidado.ctr = val < 1 ? val * 100 : val;
+                if (metric === 'CPC') client.data.summary.consolidado.cpc = val;
+                if (metric === 'SESSÕES') client.data.summary.consolidado.sessoes = val;
+                if (metric === 'CPS') client.data.summary.consolidado.cps = val;
+                if (metric === 'LEADS') client.data.summary.consolidado.leads = val;
+                if (metric === 'CPL') client.data.summary.consolidado.cpl = val;
               }
             });
+
+            client.lastSync = new Date().toISOString();
+            saveClients();
             updateDashboard();
-            closeConfigModal();
-            showToast('Arquivo local carregado com sucesso!');
+            closeClientManagerModal();
+            showToast(`Arquivo importado com sucesso para ${client.name}!`);
           }
         } catch (err) {
           alert('Erro ao ler arquivo: ' + err.message);
@@ -960,46 +1458,237 @@
       reader.readAsArrayBuffer(file);
     }
 
-    // Modal Handlers
-    function openConfigModal() {
-      document.getElementById('configModal').classList.remove('hidden');
-      document.getElementById('sheetUrlInput').value = localStorage.getItem('v4_sheets_url') || '';
+    // ========================================================
+    // CLIENT MANAGER MODAL LOGIC & TABS
+    // ========================================================
+    function openClientManagerModal(defaultTab = 'activeClient') {
+      document.getElementById('clientManagerModal').classList.remove('hidden');
+      setModalTab(defaultTab);
+      closeClientDropdown();
     }
 
-    function closeConfigModal() {
-      document.getElementById('configModal').classList.add('hidden');
+    function openEditActiveClientModal() {
+      openClientManagerModal('activeClient');
     }
 
-    function saveGoogleSheetsConfig() {
-      const url = document.getElementById('sheetUrlInput').value.trim();
-      localStorage.setItem('v4_sheets_url', url);
-
-      const sheetId = extractSpreadsheetId(url);
-      document.getElementById('syncSourceText').innerText = sheetId ? `Fonte: Google Sheets (${sheetId.substring(0, 8)}...)` : 'Fonte: Planilha Teste - 2026';
-
-      closeConfigModal();
-      syncFromGoogleSheets();
+    function openAddClientModal() {
+      openClientManagerModal('newClient');
     }
 
-    function loadSavedConfig() {
-      const savedUrl = localStorage.getItem('v4_sheets_url');
-      if (savedUrl) {
-        const id = extractSpreadsheetId(savedUrl);
-        document.getElementById('syncSourceText').innerText = id ? `Fonte: Google Sheets (${id.substring(0, 8)}...)` : 'Fonte: Planilha Teste - 2026';
+    function closeClientManagerModal() {
+      document.getElementById('clientManagerModal').classList.add('hidden');
+    }
+
+    function setModalTab(tabName) {
+      // Buttons
+      document.getElementById('tabBtnActiveClient').className = tabName === 'activeClient' 
+        ? 'px-3.5 py-1.5 font-bold rounded-lg bg-v4-red text-white transition-all shadow-sm' 
+        : 'px-3.5 py-1.5 font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all';
+      
+      document.getElementById('tabBtnAllClients').className = tabName === 'allClients' 
+        ? 'px-3.5 py-1.5 font-bold rounded-lg bg-v4-red text-white transition-all shadow-sm' 
+        : 'px-3.5 py-1.5 font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all';
+
+      document.getElementById('tabBtnNewClient').className = tabName === 'newClient' 
+        ? 'px-3.5 py-1.5 font-bold rounded-lg bg-emerald-600 text-white transition-all shadow-sm flex items-center gap-1.5' 
+        : 'px-3.5 py-1.5 font-medium rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all flex items-center gap-1.5';
+
+      // Tab Contents
+      document.getElementById('tabContentActiveClient').classList.toggle('hidden', tabName !== 'activeClient');
+      document.getElementById('tabContentAllClients').classList.toggle('hidden', tabName !== 'allClients');
+      document.getElementById('tabContentNewClient').classList.toggle('hidden', tabName !== 'newClient');
+
+      if (tabName === 'activeClient') {
+        populateActiveClientForm();
+      } else if (tabName === 'allClients') {
+        renderAllClientsModalList();
+      }
+      lucide.createIcons();
+    }
+
+    function populateActiveClientForm() {
+      const client = getActiveClient();
+      if (!client) return;
+
+      document.getElementById('modalActiveAvatar').innerText = getInitials(client.name);
+      document.getElementById('modalActiveTitle').innerText = client.name;
+      document.getElementById('modalActiveSubtitle').innerText = `ID: ${client.id}`;
+      document.getElementById('editClientNameInput').value = client.name;
+      document.getElementById('editClientSheetsUrlInput').value = client.sheetsUrl || '';
+      document.getElementById('editClientSheetTabInput').value = client.sheetTab || '';
+    }
+
+    function saveActiveClientSettings(syncNow = false) {
+      const client = getActiveClient();
+      if (!client) return;
+
+      const newName = document.getElementById('editClientNameInput').value.trim();
+      const newUrl = document.getElementById('editClientSheetsUrlInput').value.trim();
+      const newTab = document.getElementById('editClientSheetTabInput').value.trim();
+
+      if (newName) client.name = newName;
+      client.sheetsUrl = newUrl;
+      client.sheetTab = newTab || 'Geral Mensal';
+
+      saveClients();
+      updateDashboard();
+      renderClientDropdown();
+      showToast('Configurações do cliente salvas!');
+
+      if (syncNow) {
+        syncCurrentClient();
+        closeClientManagerModal();
       }
     }
 
+    function renderAllClientsModalList() {
+      const container = document.getElementById('allClientsListContainer');
+      container.innerHTML = '';
+
+      clients.forEach(client => {
+        const isActive = client.id === activeClientId;
+        const initials = getInitials(client.name);
+        const hasSheets = Boolean(client.sheetsUrl && extractSpreadsheetId(client.sheetsUrl));
+        const colorClass = client.color || 'from-v4-red to-pink-600';
+
+        const card = document.createElement('div');
+        card.className = `p-3.5 rounded-xl bg-v4-bg border ${
+          isActive ? 'border-v4-red/60 bg-slate-900/90' : 'border-v4-border hover:border-slate-700'
+        } flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all`;
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr ${colorClass} flex items-center justify-center font-bold text-white shrink-0 text-xs shadow-sm">
+              ${initials}
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white text-xs sm:text-sm truncate">${client.name}</span>
+                ${isActive ? '<span class="px-2 py-0.5 text-[10px] font-bold bg-v4-red text-white rounded">Ativo</span>' : ''}
+              </div>
+              <div class="text-[11px] text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
+                <span class="w-1.5 h-1.5 rounded-full ${hasSheets ? 'bg-emerald-400' : 'bg-slate-600'}"></span>
+                <span>${hasSheets ? 'Sheets: ' + extractSpreadsheetId(client.sheetsUrl).substring(0, 12) + '...' : 'Sem link de planilha'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+            ${!isActive ? `
+              <button onclick="selectClient('${client.id}'); setModalTab('activeClient');" class="px-2.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-all" title="Selecionar este cliente">
+                Selecionar
+              </button>
+            ` : ''}
+
+            <button onclick="syncClientById('${client.id}', true)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg transition-all" title="Sincronizar Planilha">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+
+            <button onclick="editSpecificClient('${client.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all" title="Editar">
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+            </button>
+
+            ${clients.length > 1 ? `
+              <button onclick="deleteClient('${client.id}')" class="p-1.5 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg transition-all" title="Excluir">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            ` : ''}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    function editSpecificClient(clientId) {
+      selectClient(clientId);
+      setModalTab('activeClient');
+    }
+
+    function deleteClient(clientId) {
+      if (clients.length <= 1) {
+        alert('Não é possível excluir o único cliente cadastrado.');
+        return;
+      }
+      const client = clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      if (confirm(`Tem certeza que deseja excluir o cliente "${client.name}"?`)) {
+        clients = clients.filter(c => c.id !== clientId);
+        if (activeClientId === clientId) {
+          activeClientId = clients[0].id;
+        }
+        saveClients();
+        updateDashboard();
+        renderClientDropdown();
+        renderAllClientsModalList();
+        showToast(`Cliente "${client.name}" removido.`);
+      }
+    }
+
+    function createNewClientSubmit() {
+      const nameInput = document.getElementById('newClientNameInput');
+      const urlInput = document.getElementById('newClientSheetsUrlInput');
+      const tabInput = document.getElementById('newClientSheetTabInput');
+
+      const name = nameInput.value.trim();
+      const url = urlInput.value.trim();
+      const tab = tabInput.value.trim();
+
+      if (!name) {
+        alert('Por favor, digite o nome do novo cliente.');
+        nameInput.focus();
+        return;
+      }
+
+      const id = 'client_' + Date.now();
+      const paletteIndex = clients.length % COLOR_PALETTES.length;
+      const color = COLOR_PALETTES[paletteIndex];
+
+      const newClient = {
+        id: id,
+        name: name,
+        sheetsUrl: url,
+        sheetTab: tab || 'Geral Mensal',
+        color: color,
+        lastSync: null,
+        data: JSON.parse(JSON.stringify(DEFAULT_DATA_CLIENT_TESTE))
+      };
+
+      clients.push(newClient);
+      activeClientId = id;
+      saveClients();
+
+      // Clear input fields
+      nameInput.value = '';
+      urlInput.value = '';
+      tabInput.value = '';
+
+      updateDashboard();
+      renderClientDropdown();
+      closeClientManagerModal();
+      showToast(`Cliente "${name}" cadastrado e ativado!`);
+
+      if (url && extractSpreadsheetId(url)) {
+        syncClientById(id, true);
+      }
+    }
+
+    // Toast feedback helper
     function showToast(msg) {
       const toast = document.getElementById('toastNotification');
       document.getElementById('toastMessage').innerText = msg;
       toast.classList.remove('translate-y-20', 'opacity-0');
       setTimeout(() => {
         toast.classList.add('translate-y-20', 'opacity-0');
-      }, 3000);
+      }, 3500);
     }
 
-    // Export CSV
-    function exportAugustCSV() {
+    // Export CSV with active client context
+    function exportClientCSV() {
+      const client = getActiveClient();
       const table = document.getElementById('augustTable');
       let csv = [];
       for (let r of table.rows) {
@@ -1012,7 +1701,8 @@
       const blob = new Blob(["\ufeff" + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
-      link.download = `metricas_agosto_2026_${new Date().toISOString().substring(0, 10)}.csv`;
+      const safeName = (client ? client.name : 'cliente').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      link.download = `metricas_${safeName}_agosto_2026_${new Date().toISOString().substring(0, 10)}.csv`;
       link.click();
     }
   </script>
