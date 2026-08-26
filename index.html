@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="pageTitle">Dashboard de Tráfego • V4 Company</title>
+  <!-- Google Fonts: Inter / Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- ApexCharts & Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- SheetJS for local XLSX upload fallback -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          },
+          colors: {
+            v4: {
+              red: '#ff2d55',
+              darkRed: '#e11d48',
+              bg: '#0b0f17',
+              card: '#131926',
+              cardSubtle: '#0f1420',
+              border: '#1f293d',
+              borderLight: '#2a3752',
+              meta: '#0081fb',
+              google: '#34a853',
+              gold: '#f59e0b',
+              cyan: '#06b6d4',
+              emerald: '#10b981'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0b0f17;
+      color: #f1f5f9;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0b0f17;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #1f293d;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.15s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #ffffff !important; color: #000000 !important; }
+      .v4-card { border: 1px solid #e2e8f0 !important; background: #ffffff !important; color: #000000 !important; }
+      .text-white { color: #0f172a !important; }
+      .text-slate-300, .text-slate-400 { color: #475569 !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen custom-scrollbar selection:bg-v4-red selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-40 bg-v4-bg/95 backdrop-blur border-b border-v4-border no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      
+      <!-- Brand & Client Dropdown Selector -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-v4-red flex items-center justify-center font-black text-lg text-white shadow-sm shadow-v4-red/30 shrink-0">
+          V4
+        </div>
+
+        <div class="h-6 w-px bg-v4-border hidden sm:block"></div>
+
+        <!-- CLIENT SELECTOR DROPDOWN (MENU SUSPENSO) -->
+        <div class="relative">
+          <button id="clientDropdownBtn" onclick="toggleClientDropdown(event)" class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-v4-card hover:bg-slate-800/80 border border-v4-border hover:border-slate-600 transition-all text-left group">
+            <div id="activeClientAvatar" class="w-7 h-7 rounded-lg bg-gradient-to-tr from-v4-red to-pink-600 flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm">
+              CT
+            </div>
+            <div class="flex flex-col">
+              <div class="flex items-center gap-1.5">
+                <span id="activeClientName" class="text-xs sm:text-sm font-bold text-white tracking-tight group-hover:text-v4-red transition-colors max-w-[130px] sm:max-w-[200px] truncate">
+                  Cliente Teste
+                </span>
+                <i data-lucide="chevron-down" id="clientDropdownChevron" class="w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform duration-200"></i>
+              </div>
+              <span id="activeClientSourceBadge" class="text-[10px] text-slate-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Google Sheets
+              </span>
+            </div>
+          </button>
+
+          <!-- Dropdown Popover Menu -->
+          <div id="clientDropdownMenu" class="hidden absolute top-full left-0 mt-2 w-72 sm:w-80 bg-v4-card border border-v4-border rounded-2xl shadow-2xl z-50 p-2 space-y-2 animate-fadeIn backdrop-blur-xl">
+            
+            <!-- Search / Filter input -->
+            <div class="relative px-1 pt-1">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="clientSearchInput" oninput="filterClientList(this.value)" placeholder="Buscar cliente..." class="w-full bg-v4-bg border border-v4-border rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-200 outline-none focus:border-v4-red">
+            </div>
+
+            <!-- List of Clients -->
+            <div class="max-h-60 overflow-y-auto custom-scrollbar space-y-1 px-1" id="clientDropdownList">
+              <!-- Dynamically rendered -->
+            </div>
+
+            <!-- Divider -->
+            <div class="border-t border-v4-border/80 pt-1.5 px-1 space-y-1">
+              <button onclick="openAddClientModal()" class="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-xl transition-all">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>Cadastrar Novo Cliente</span>
+              </button>
+              <button onclick="openClientManagerModal()" class="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                <span class="flex items-center gap-2">
+                  <i data-lucide="sliders-horizontal" class="w-4 h-4 text-slate-400"></i>
+                  Gerenciar Clientes & Planilhas
+                </span>
+                <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded" id="clientCountBadge">3</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Header Actions -->
+      <div class="flex items-center gap-2">
+        <!-- Live Sync Now (For Selected Client) -->
+        <button id="btnSyncNow" onclick="syncCurrentClient()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-v4-card hover:bg-slate-800 border border-v4-border rounded-lg transition-all active:scale-95 shadow-sm" title="Sincronizar dados do cliente selecionado">
+          <i data-lucide="refresh-cw" id="syncIcon" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="hidden sm:inline">Sincronizar</span>
+        </button>
+
+        <!-- Config Google Sheets of Active Client -->
+        <button onclick="openEditActiveClientModal()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-v4-card hover:bg-slate-800 border border-v4-border rounded-lg transition-all" title="Configurar Planilha do Cliente">
+          <i data-lucide="sheet" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="hidden md:inline">Planilha</span>
+        </button>
+
+        <!-- Export CSV -->
+        <button onclick="exportClientCSV()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-200 bg-v4-card hover:bg-slate-800 border border-v4-border rounded-lg transition-all" title="Exportar dados em CSV">
+          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-slate-300"></i>
+          <span class="hidden sm:inline">CSV</span>
+        </button>
+
+        <!-- Print / PDF -->
+        <button onclick="window.print()" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-v4-red hover:bg-v4-darkRed rounded-lg transition-all shadow-sm shadow-v4-red/20 active:scale-95" title="Imprimir / Salvar PDF">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">PDF</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- SUB-HEADER: CLIENT BADGE, CHANNEL SELECTOR & SOURCE STATUS -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 p-3.5 rounded-xl bg-v4-card border border-v4-border">
+      
+      <!-- Channel Switcher -->
+      <div class="flex items-center gap-1 bg-v4-bg p-1 rounded-lg border border-v4-border w-full md:w-auto">
+        <button onclick="setChannel('consolidado')" id="btnConsolidado" class="flex-1 md:flex-none px-3.5 py-1.5 text-xs font-bold rounded-md transition-all text-white bg-v4-red shadow-sm shadow-v4-red/30">
+          Consolidado
+        </button>
+        <button onclick="setChannel('meta')" id="btnMeta" class="flex-1 md:flex-none px-3.5 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white">
+          <span class="flex items-center justify-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-v4-meta"></span> Meta Ads
+          </span>
+        </button>
+        <button onclick="setChannel('google')" id="btnGoogle" class="flex-1 md:flex-none px-3.5 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white">
+          <span class="flex items-center justify-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-v4-google"></span> Google Ads
+          </span>
+        </button>
+      </div>
+
+      <!-- Active Client & Sync status info -->
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-400 w-full md:w-auto justify-between md:justify-end">
+        <div class="flex items-center gap-2">
+          <span id="syncDotStatus" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="syncSourceText" class="font-medium text-slate-300">Planilha Conectada: Teste - 2026</span>
+        </div>
+        <span class="text-slate-600 hidden sm:inline">•</span>
+        <span id="lastSyncTimeText" class="text-slate-400">Sincronizado agora</span>
+      </div>
+
+    </div>
+
+    <!-- 10 REQUESTED METRICS - 5x2 CLEAN GRID -->
+    <div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        
+        <!-- 1. INVESTIMENTO -->
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            Investimento
+          </div>
+          <div class="text-xl font-bold text-white" id="cardInvestimento">
+            R$ 4.419,60
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1" id="subInvestimento">
+            Meta 43% • Google 57%
+          </div>
+        </div>
+
+        <!-- 2. IMPRESSÕES -->
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            Impressões
+          </div>
+          <div class="text-xl font-bold text-white" id="cardImpressoes">
+            297.044
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1" id="subImpressoes">
+            Meta 90% • Google 10%
+          </div>
+        </div>
+
+        <!-- 3. CLIQUES -->
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            Cliques
+          </div>
+          <div class="text-xl font-bold text-white" id="cardCliques">
+            2.505
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1" id="subCliques">
+            Meta 688 • Google 1.817
+          </div>
+        </div>
+
+        <!-- 4. CPM -->
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            CPM
+          </div>
+          <div class="text-xl font-bold text-white" id="cardCPM">
+            R$ 14,88
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1" id="subCPM">
+            Meta R$ 7,10 • Goo R$ 88,20
+          </div>
+        </div>
+
+        <!-- 5. CTR -->
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            CTR
+          </div>
+          <div class="text-xl font-bold text-white" id="cardCTR">
+            0,84%
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1" id="subCTR">
+            Meta 0,26% • Google 6,38%
+          </div>
+        </div>
+
+        <!-- 6. CPC -->
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            CPC
+          </div>
+          <div class="text-xl font-bold text-white" id="cardCPC">
+            R$ 1,76
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1" id="subCPC">
+            Meta R$ 2,77 • Goo R$ 1,38
+          </div>
+        </div>
+
+        <!-- 7. SESSÕES -->
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            Sessões
+          </div>
+          <div class="text-xl font-bold text-white" id="cardSessoes">
+            2.110
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1" id="subSessoes">
+            Retenção: 84,2% dos cliques
+          </div>
+        </div>
+
+        <!-- 8. CPS -->
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            CPS (Custo/Sessão)
+          </div>
+          <div class="text-xl font-bold text-white" id="cardCPS">
+            R$ 2,09
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1" id="subCPS">
+            Investimento / Sessões
+          </div>
+        </div>
+
+        <!-- 9. LEADS -->
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            Leads
+          </div>
+          <div class="text-xl font-bold text-emerald-400" id="cardLeads">
+            121,98
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1" id="subLeads">
+            Meta 96 • Google 25,98
+          </div>
+        </div>
+
+        <!-- 10. CPL -->
+        <div class="v4-card p-4 rounded-xl bg-v4-card border border-v4-border hover:border-slate-700 transition-all">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+            CPL (Custo/Lead)
+          </div>
+          <div class="text-xl font-bold text-v4-red" id="cardCPL">
+            R$ 36,23
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1" id="subCPL">
+            Meta R$ 19,86 • Goo R$ 96,74
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CHARTS SECTION: 2 ESSENTIAL CHARTS -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- Chart 1: Evolução Diária (Investimento vs Leads vs CPL) -->
+      <div class="v4-card p-5 rounded-xl bg-v4-card border border-v4-border">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h3 class="text-sm font-bold text-white">Evolução de Investimento, Leads e CPL</h3>
+            <p class="text-[11px] text-slate-400">Volume financeiro vs leads gerados no período</p>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span class="flex items-center gap-1 text-slate-300"><span class="w-2.5 h-2.5 rounded-sm bg-v4-red"></span> Invest.</span>
+            <span class="flex items-center gap-1 text-slate-300"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-400"></span> Leads</span>
+            <span class="flex items-center gap-1 text-slate-300"><span class="w-2 h-2 rounded-full bg-amber-400"></span> CPL</span>
+          </div>
+        </div>
+        <div id="chartEvolution" class="w-full h-[280px]"></div>
+      </div>
+
+      <!-- Chart 2: Tráfego e Custos (Cliques vs Sessões & CPC) -->
+      <div class="v4-card p-5 rounded-xl bg-v4-card border border-v4-border">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h3 class="text-sm font-bold text-white">Volume de Tráfego: Cliques & Sessões</h3>
+            <p class="text-[11px] text-slate-400">Aproveitamento do tráfego enviado ao site</p>
+          </div>
+          <div class="flex items-center gap-3 text-xs">
+            <span class="flex items-center gap-1 text-slate-300"><span class="w-2.5 h-2.5 rounded-sm bg-blue-500"></span> Cliques</span>
+            <span class="flex items-center gap-1 text-slate-300"><span class="w-2.5 h-2.5 rounded-sm bg-teal-400"></span> Sessões</span>
+          </div>
+        </div>
+        <div id="chartTraffic" class="w-full h-[280px]"></div>
+      </div>
+
+    </div>
+
+    <!-- DAILY PERFORMANCE TABLE - ONLY THE 10 METRICS -->
+    <div class="v4-card rounded-xl bg-v4-card border border-v4-border overflow-hidden">
+      <div class="p-4 border-b border-v4-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm font-bold text-white" id="tableTitleText">Tabela Diária de Performance • Cliente Teste</h3>
+          <p class="text-[11px] text-slate-400">Detalhamento dos dias com dados ativos</p>
+        </div>
+
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <!-- Filter input -->
+          <div class="relative flex-1 sm:w-48">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500"></i>
+            <input type="text" id="tableFilter" onkeyup="filterDailyTable(this.value)" placeholder="Buscar dia..." class="w-full bg-v4-bg border border-v4-border rounded-lg pl-8 pr-3 py-1 text-xs text-slate-200 outline-none focus:border-v4-red">
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left text-xs whitespace-nowrap" id="augustTable">
+          <thead class="bg-v4-bg text-slate-400 font-semibold border-b border-v4-border">
+            <tr>
+              <th class="p-3 sticky left-0 z-20 bg-[#0b0f17] border-r border-v4-border min-w-[120px]">DATA</th>
+              <th class="p-3 text-right font-bold text-slate-200 min-w-[120px]">INVESTIMENTO</th>
+              <th class="p-3 text-right font-bold text-slate-200 min-w-[100px]">IMPRESSÕES</th>
+              <th class="p-3 text-right font-bold text-slate-200 min-w-[80px]">CLIQUES</th>
+              <th class="p-3 text-right font-bold text-slate-200 min-w-[90px]">CPM</th>
+              <th class="p-3 text-right font-bold text-slate-200 min-w-[80px]">CTR</th>
+              <th class="p-3 text-right font-bold text-slate-200 min-w-[90px]">CPC</th>
+              <th class="p-3 text-right font-bold text-slate-200 min-w-[80px]">SESSÕES</th>
+              <th class="p-3 text-right font-bold text-slate-200 min-w-[90px]">CPS</th>
+              <th class="p-3 text-right font-bold text-emerald-400 min-w-[80px]">LEADS</th>
+              <th class="p-3 text-right font-bold text-v4-red min-w-[100px]">CPL</th>
+            </tr>
+          </thead>
+          <!-- Summary Row at Top -->
+          <tbody class="bg-slate-900/80 border-b-2 border-v4-border font-bold text-slate-100">
+            <tr>
+              <td class="p-3 sticky left-0 z-10 bg-slate-900 border-r border-v4-border text-v4-red font-extrabold" id="tblSummaryRowLabel">TOTAL ACUMULADO</td>
+              <td class="p-3 text-right font-mono text-white text-sm" id="tblTotalInvest">R$ 4.419,60</td>
+              <td class="p-3 text-right font-mono" id="tblTotalImpr">297.044</td>
+              <td class="p-3 text-right font-mono" id="tblTotalClicks">2.505</td>
+              <td class="p-3 text-right font-mono" id="tblTotalCPM">R$ 14,88</td>
+              <td class="p-3 text-right font-mono" id="tblTotalCTR">0,84%</td>
+              <td class="p-3 text-right font-mono" id="tblTotalCPC">R$ 1,76</td>
+              <td class="p-3 text-right font-mono" id="tblTotalSessions">2.110</td>
+              <td class="p-3 text-right font-mono" id="tblTotalCPS">R$ 2,09</td>
+              <td class="p-3 text-right font-mono text-emerald-400 text-sm" id="tblTotalLeads">121,98</td>
+              <td class="p-3 text-right font-mono text-v4-red text-sm" id="tblTotalCPL">R$ 36,23</td>
+            </tr>
+          </tbody>
+          <tbody class="divide-y divide-v4-border/40 text-slate-300 font-mono" id="tableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: GERENCIAR CLIENTES & GOOGLE SHEETS                 -->
+  <!-- ======================================================== -->
+  <div id="clientManagerModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden p-4">
+    <div class="bg-v4-card border border-v4-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 relative max-h-[90vh] flex flex-col">
+      
+      <!-- Close Button -->
+      <button onclick="closeClientManagerModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-all">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Modal Header -->
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 rounded-xl bg-v4-red/10 text-v4-red border border-v4-red/20">
+          <i data-lucide="users-round" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-base text-white">Gerenciar Clientes & Conexões Google Sheets</h3>
+          <p class="text-xs text-slate-400">Configure os clientes e vincule cada um à sua planilha específica do Google Drive</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="flex items-center gap-2 border-b border-v4-border pb-2 text-xs">
+        <button onclick="setModalTab('activeClient')" id="tabBtnActiveClient" class="px-3.5 py-1.5 font-bold rounded-lg bg-v4-red text-white transition-all shadow-sm">
+          Cliente Ativo
+        </button>
+        <button onclick="setModalTab('allClients')" id="tabBtnAllClients" class="px-3.5 py-1.5 font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+          Todos os Clientes (<span id="modalTabCount">3</span>)
+        </button>
+        <button onclick="setModalTab('newClient')" id="tabBtnNewClient" class="px-3.5 py-1.5 font-medium rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all flex items-center gap-1.5">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i> Novo Cliente
+        </button>
+      </div>
+
+      <!-- TAB CONTENT CONTAINER -->
+      <div class="overflow-y-auto custom-scrollbar flex-1 pr-1">
+
+        <!-- TAB 1: ACTIVE CLIENT SETTINGS -->
+        <div id="tabContentActiveClient" class="space-y-4 text-xs">
+          
+          <div class="p-4 rounded-xl bg-v4-bg border border-v4-border space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div id="modalActiveAvatar" class="w-8 h-8 rounded-lg bg-v4-red flex items-center justify-center font-bold text-white">
+                  CT
+                </div>
+                <div>
+                  <h4 id="modalActiveTitle" class="font-bold text-white text-sm">Cliente Teste</h4>
+                  <p class="text-[11px] text-slate-400" id="modalActiveSubtitle">ID: client_teste</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg">
+                Selecionado
+              </span>
+            </div>
+
+            <!-- Form Edit Active Client -->
+            <div class="space-y-3 pt-2">
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Nome do Cliente</label>
+                <input type="text" id="editClientNameInput" placeholder="Ex: Acme Store" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-v4-red">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Link ou ID da Planilha Google Sheets</label>
+                <input type="text" id="editClientSheetsUrlInput" placeholder="https://docs.google.com/spreadsheets/d/SEU_ID_AQUI/edit" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-emerald-500">
+                <p class="text-[11px] text-slate-400 mt-1">
+                  Importante: Compartilhe a planilha como <strong>"Qualquer pessoa com o link"</strong> como <em>Leitor</em>.
+                </p>
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Nome da Aba (Opcional)</label>
+                <input type="text" id="editClientSheetTabInput" placeholder="Ex: Geral Mensal (ou deixe em branco para detecção automática)" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-slate-500">
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-v4-border/60">
+              <button onclick="saveActiveClientSettings(true)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-all flex items-center gap-1.5 active:scale-95">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Salvar e Sincronizar
+              </button>
+              <button onclick="saveActiveClientSettings(false)" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg transition-all">
+                Salvar Alterações
+              </button>
+            </div>
+          </div>
+
+          <!-- Fallback Upload local para este cliente -->
+          <div class="p-3.5 rounded-xl bg-v4-bg border border-v4-border flex items-center justify-between">
+            <div>
+              <span class="font-semibold text-slate-300 block">Carregar arquivo local deste cliente</span>
+              <span class="text-[11px] text-slate-400">Importe dados diretamente de arquivo .xlsx ou .csv</span>
+            </div>
+            <label class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg cursor-pointer transition-all font-semibold shrink-0">
+              <input type="file" accept=".xlsx,.csv,.json" class="hidden" onchange="handleFileUpload(event)">
+              Escolher Arquivo
+            </label>
+          </div>
+
+        </div>
+
+        <!-- TAB 2: ALL CLIENTS LIST -->
+        <div id="tabContentAllClients" class="space-y-3 text-xs hidden">
+          <div class="flex items-center justify-between text-slate-400 text-[11px] px-1">
+            <span>Selecione um cliente para analisar ou edite suas conexões:</span>
+            <button onclick="syncAllClients()" class="text-emerald-400 hover:underline flex items-center gap-1 font-semibold">
+              <i data-lucide="refresh-cw" class="w-3 h-3"></i> Sincronizar Todos
+            </button>
+          </div>
+
+          <div class="space-y-2" id="allClientsListContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- TAB 3: NEW CLIENT FORM -->
+        <div id="tabContentNewClient" class="space-y-4 text-xs hidden">
+          <div class="p-4 rounded-xl bg-v4-bg border border-v4-border space-y-3">
+            <h4 class="font-bold text-white text-sm">Cadastrar Novo Cliente</h4>
+            <p class="text-[11px] text-slate-400">Adicione uma nova conta e vincule com sua respectiva planilha do Google Sheets.</p>
+
+            <div class="space-y-3 pt-1">
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Nome do Cliente *</label>
+                <input type="text" id="newClientNameInput" placeholder="Ex: E-commerce SuperModa" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-emerald-500">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Link ou ID da Planilha Google Sheets</label>
+                <input type="text" id="newClientSheetsUrlInput" placeholder="https://docs.google.com/spreadsheets/d/SEU_ID_AQUI/edit" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-emerald-500">
+              </div>
+
+              <div>
+                <label class="block font-semibold text-slate-300 mb-1">Nome da Aba (Opcional)</label>
+                <input type="text" id="newClientSheetTabInput" placeholder="Ex: Geral Mensal" class="w-full bg-v4-card border border-v4-border rounded-lg px-3.5 py-2 text-xs text-slate-100 outline-none focus:border-slate-500">
+              </div>
+            </div>
+
+            <div class="pt-2 flex justify-end gap-2">
+              <button onclick="setModalTab('allClients')" class="px-3.5 py-2 text-slate-400 hover:text-white rounded-lg">
+                Cancelar
+              </button>
+              <button onclick="createNewClientSubmit()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg transition-all flex items-center gap-1.5 active:scale-95 shadow-sm">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Cadastrar e Ativar
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between pt-3 border-t border-v4-border text-xs">
+        <span class="text-slate-500 text-[11px]">As configurações ficam salvas localmente no navegador.</span>
+        <button onclick="closeClientManagerModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition-all">
+          Fechar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toastNotification" class="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold shadow-2xl flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300">
+    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+    <span id="toastMessage">Operação realizada com sucesso!</span>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- JAVASCRIPT LOGIC & MULTI-CLIENT GOOGLE SHEETS ENGINE     -->
+  <!-- ======================================================== -->
+  <script>
+    // Storage Keys
+    const CLIENTS_STORAGE_KEY = 'v4_dashboard_clients_v2';
+    const ACTIVE_CLIENT_STORAGE_KEY = 'v4_dashboard_active_client_id';
+
+    // Baseline dataset extracted from "Teste - 2026.xlsx" for August 2026
+    const DEFAULT_DATA_CLIENT_TESTE = {
+      summary: {
+        consolidado: {
+          investimento: 4419.60,
+          impressoes: 297044,
+          cliques: 2505,
+          cpm: 14.88,
+          ctr: 0.8433,
+          cpc: 1.7643,
+          sessoes: 2110,
+          cps: 2.0946,
+          leads: 121.98,
+          cpl: 36.2322
+        },
+        meta: {
+          investimento: 1906.24,
+          impressoes: 268549,
+          cliques: 688,
+          cpm: 7.10,
+          ctr: 0.2562,
+          cpc: 2.7707,
+          sessoes: 0,
+          cps: 0,
+          leads: 96.0,
+          cpl: 19.8567
+        },
+        google: {
+          investimento: 2513.36,
+          impressoes: 28495,
+          cliques: 1817,
+          cpm: 88.20,
+          ctr: 6.3766,
+          cpc: 1.3832,
+          sessoes: 0,
+          cps: 0,
+          leads: 25.98,
+          cpl: 96.7421
+        }
+      },
+      daily: [
+        {"date": "2026-08-01", "day": 1, "investimento": 231.16, "meta_investimento": 122.38, "google_investimento": 108.78, "impressoes": 18507, "meta_impressoes": 17219, "google_impressoes": 1288, "cliques": 132, "meta_cliques": 43, "google_cliques": 89, "sessoes": 98, "leads": 6.0, "meta_leads": 5.0, "google_leads": 1.0, "cpm": 12.49, "ctr": 0.71, "cpc": 1.75, "cps": 2.36, "cpl": 38.53},
+        {"date": "2026-08-02", "day": 2, "investimento": 278.19, "meta_investimento": 177.51, "google_investimento": 100.68, "impressoes": 20971, "meta_impressoes": 19702, "google_impressoes": 1269, "cliques": 153, "meta_cliques": 61, "google_cliques": 92, "sessoes": 88, "leads": 8.0, "meta_leads": 7.0, "google_leads": 1.0, "cpm": 13.27, "ctr": 0.73, "cpc": 1.82, "cps": 3.16, "cpl": 34.77},
+        {"date": "2026-08-03", "day": 3, "investimento": 237.41, "meta_investimento": 133.17, "google_investimento": 104.24, "impressoes": 15671, "meta_impressoes": 14917, "google_impressoes": 754, "cliques": 95, "meta_cliques": 47, "google_cliques": 48, "sessoes": 70, "leads": 7.0, "meta_leads": 6.0, "google_leads": 1.0, "cpm": 15.15, "ctr": 0.61, "cpc": 2.50, "cps": 3.39, "cpl": 33.92},
+        {"date": "2026-08-04", "day": 4, "investimento": 186.67, "meta_investimento": 98.90, "google_investimento": 87.77, "impressoes": 13039, "meta_impressoes": 12036, "google_impressoes": 1003, "cliques": 98, "meta_cliques": 39, "google_cliques": 59, "sessoes": 86, "leads": 10.0, "meta_leads": 9.0, "google_leads": 1.0, "cpm": 14.32, "ctr": 0.75, "cpc": 1.90, "cps": 2.17, "cpl": 18.67},
+        {"date": "2026-08-05", "day": 5, "investimento": 211.86, "meta_investimento": 88.21, "google_investimento": 123.65, "impressoes": 11751, "meta_impressoes": 10884, "google_impressoes": 867, "cliques": 87, "meta_cliques": 27, "google_cliques": 60, "sessoes": 81, "leads": 5.0, "meta_leads": 4.0, "google_leads": 1.0, "cpm": 18.03, "ctr": 0.74, "cpc": 2.44, "cps": 2.62, "cpl": 42.37},
+        {"date": "2026-08-06", "day": 6, "investimento": 184.26, "meta_investimento": 79.36, "google_investimento": 104.90, "impressoes": 13829, "meta_impressoes": 12389, "google_impressoes": 1440, "cliques": 120, "meta_cliques": 41, "google_cliques": 79, "sessoes": 95, "leads": 8.98, "meta_leads": 8.0, "google_leads": 0.98, "cpm": 13.32, "ctr": 0.87, "cpc": 1.54, "cps": 1.94, "cpl": 20.52},
+        {"date": "2026-08-07", "day": 7, "investimento": 140.97, "meta_investimento": 87.19, "google_investimento": 53.78, "impressoes": 13466, "meta_impressoes": 12179, "google_impressoes": 1287, "cliques": 74, "meta_cliques": 23, "google_cliques": 51, "sessoes": 60, "leads": 4.0, "meta_leads": 4.0, "google_leads": 0.0, "cpm": 10.47, "ctr": 0.55, "cpc": 1.91, "cps": 2.35, "cpl": 35.24},
+        {"date": "2026-08-08", "day": 8, "investimento": 161.27, "meta_investimento": 70.13, "google_investimento": 91.14, "impressoes": 14106, "meta_impressoes": 12357, "google_impressoes": 1749, "cliques": 80, "meta_cliques": 13, "google_cliques": 67, "sessoes": 76, "leads": 2.0, "meta_leads": 2.0, "google_leads": 0.0, "cpm": 11.43, "ctr": 0.57, "cpc": 2.02, "cps": 2.12, "cpl": 80.64},
+        {"date": "2026-08-09", "day": 9, "investimento": 183.24, "meta_investimento": 115.89, "google_investimento": 67.35, "impressoes": 18543, "meta_impressoes": 17394, "google_impressoes": 1149, "cliques": 96, "meta_cliques": 42, "google_cliques": 54, "sessoes": 65, "leads": 3.0, "meta_leads": 2.0, "google_leads": 1.0, "cpm": 9.88, "ctr": 0.52, "cpc": 1.91, "cps": 2.82, "cpl": 61.08},
+        {"date": "2026-08-10", "day": 10, "investimento": 242.28, "meta_investimento": 98.47, "google_investimento": 143.81, "impressoes": 15144, "meta_impressoes": 14263, "google_impressoes": 881, "cliques": 104, "meta_cliques": 42, "google_cliques": 62, "sessoes": 73, "leads": 5.0, "meta_leads": 5.0, "google_leads": 0.0, "cpm": 16.00, "ctr": 0.69, "cpc": 2.33, "cps": 3.32, "cpl": 48.46},
+        {"date": "2026-08-11", "day": 11, "investimento": 244.20, "meta_investimento": 104.70, "google_investimento": 139.50, "impressoes": 15171, "meta_impressoes": 14244, "google_impressoes": 927, "cliques": 102, "meta_cliques": 41, "google_cliques": 61, "sessoes": 89, "leads": 7.0, "meta_leads": 6.0, "google_leads": 1.0, "cpm": 16.10, "ctr": 0.67, "cpc": 2.39, "cps": 2.74, "cpl": 34.89},
+        {"date": "2026-08-12", "day": 12, "investimento": 193.34, "meta_investimento": 101.80, "google_investimento": 91.54, "impressoes": 13809, "meta_impressoes": 13145, "google_impressoes": 664, "cliques": 88, "meta_cliques": 33, "google_cliques": 55, "sessoes": 66, "leads": 6.0, "meta_leads": 5.0, "google_leads": 1.0, "cpm": 14.00, "ctr": 0.64, "cpc": 2.20, "cps": 2.93, "cpl": 32.22},
+        {"date": "2026-08-13", "day": 13, "investimento": 180.46, "meta_investimento": 71.07, "google_investimento": 109.39, "impressoes": 13094, "meta_impressoes": 11745, "google_impressoes": 1349, "cliques": 88, "meta_cliques": 23, "google_cliques": 65, "sessoes": 90, "leads": 6.0, "meta_leads": 3.0, "google_leads": 3.0, "cpm": 13.78, "ctr": 0.67, "cpc": 2.05, "cps": 2.01, "cpl": 30.08},
+        {"date": "2026-08-14", "day": 14, "investimento": 134.95, "meta_investimento": 77.33, "google_investimento": 57.62, "impressoes": 13709, "meta_impressoes": 12896, "google_impressoes": 813, "cliques": 71, "meta_cliques": 24, "google_cliques": 47, "sessoes": 65, "leads": 3.0, "meta_leads": 2.0, "google_leads": 1.0, "cpm": 9.84, "ctr": 0.52, "cpc": 1.90, "cps": 2.08, "cpl": 44.98},
+        {"date": "2026-08-15", "day": 15, "investimento": 161.55, "meta_investimento": 73.38, "google_investimento": 88.17, "impressoes": 13614, "meta_impressoes": 12870, "google_impressoes": 744, "cliques": 70, "meta_cliques": 25, "google_cliques": 45, "sessoes": 45, "leads": 1.0, "meta_leads": 1.0, "google_leads": 0.0, "cpm": 11.87, "ctr": 0.51, "cpc": 2.31, "cps": 3.59, "cpl": 161.55},
+        {"date": "2026-08-16", "day": 16, "investimento": 213.05, "meta_investimento": 124.18, "google_investimento": 88.87, "impressoes": 18485, "meta_impressoes": 17721, "google_impressoes": 764, "cliques": 115, "meta_cliques": 58, "google_cliques": 57, "sessoes": 64, "leads": 10.0, "meta_leads": 9.0, "google_leads": 1.0, "cpm": 11.53, "ctr": 0.62, "cpc": 1.85, "cps": 3.33, "cpl": 21.30},
+        {"date": "2026-08-17", "day": 17, "investimento": 253.44, "meta_investimento": 102.47, "google_investimento": 150.97, "impressoes": 16319, "meta_impressoes": 15347, "google_impressoes": 972, "cliques": 115, "meta_cliques": 45, "google_cliques": 70, "sessoes": 93, "leads": 3.0, "meta_leads": 3.0, "google_leads": 0.0, "cpm": 15.53, "ctr": 0.70, "cpc": 2.20, "cps": 2.73, "cpl": 84.48},
+        {"date": "2026-08-18", "day": 18, "investimento": 203.82, "meta_investimento": 95.08, "google_investimento": 108.74, "impressoes": 15344, "meta_impressoes": 14444, "google_impressoes": 900, "cliques": 87, "meta_cliques": 36, "google_cliques": 51, "sessoes": 69, "leads": 14.0, "meta_leads": 12.0, "google_leads": 2.0, "cpm": 13.28, "ctr": 0.57, "cpc": 2.34, "cps": 2.95, "cpl": 14.56},
+        {"date": "2026-08-19", "day": 19, "investimento": 191.98, "meta_investimento": 84.75, "google_investimento": 107.23, "impressoes": 14163, "meta_impressoes": 12664, "google_impressoes": 1499, "cliques": 175, "meta_cliques": 25, "google_cliques": 150, "sessoes": 158, "leads": 6.0, "meta_leads": 3.0, "google_leads": 3.0, "cpm": 13.56, "ctr": 1.24, "cpc": 1.10, "cps": 1.22, "cpl": 32.00},
+        {"date": "2026-08-20", "day": 20, "investimento": 81.63, "meta_investimento": 0.27, "google_investimento": 81.36, "impressoes": 1206, "meta_impressoes": 133, "google_impressoes": 1073, "cliques": 106, "meta_cliques": 0, "google_cliques": 106, "sessoes": 110, "leads": 0.0, "meta_leads": 0.0, "google_leads": 0.0, "cpm": 67.69, "ctr": 8.79, "cpc": 0.77, "cps": 0.74, "cpl": 0.00},
+        {"date": "2026-08-21", "day": 21, "investimento": 106.31, "meta_investimento": 0.00, "google_investimento": 106.31, "impressoes": 2634, "meta_impressoes": 0, "google_impressoes": 2634, "cliques": 142, "meta_cliques": 0, "google_cliques": 142, "sessoes": 130, "leads": 1.0, "meta_leads": 0.0, "google_leads": 1.0, "cpm": 40.36, "ctr": 5.39, "cpc": 0.75, "cps": 0.82, "cpl": 106.31},
+        {"date": "2026-08-22", "day": 22, "investimento": 57.05, "meta_investimento": 0.00, "google_investimento": 57.05, "impressoes": 781, "meta_impressoes": 0, "google_impressoes": 781, "cliques": 44, "meta_cliques": 0, "google_cliques": 44, "sessoes": 65, "leads": 2.0, "meta_leads": 0.0, "google_leads": 2.0, "cpm": 73.05, "ctr": 5.63, "cpc": 1.30, "cps": 0.88, "cpl": 28.52},
+        {"date": "2026-08-23", "day": 23, "investimento": 88.05, "meta_investimento": 0.00, "google_investimento": 88.05, "impressoes": 837, "meta_impressoes": 0, "google_impressoes": 837, "cliques": 56, "meta_cliques": 0, "google_cliques": 56, "sessoes": 59, "leads": 2.0, "meta_leads": 0.0, "google_leads": 2.0, "cpm": 105.20, "ctr": 6.69, "cpc": 1.57, "cps": 1.49, "cpl": 44.02},
+        {"date": "2026-08-24", "day": 24, "investimento": 155.27, "meta_investimento": 0.00, "google_investimento": 155.27, "impressoes": 1064, "meta_impressoes": 0, "google_impressoes": 1064, "cliques": 81, "meta_cliques": 0, "google_cliques": 81, "sessoes": 96, "leads": 0.0, "meta_leads": 0.0, "google_leads": 0.0, "cpm": 145.93, "ctr": 7.61, "cpc": 1.92, "cps": 1.62, "cpl": 0.00},
+        {"date": "2026-08-25", "day": 25, "investimento": 97.19, "meta_investimento": 0.00, "google_investimento": 97.19, "impressoes": 1787, "meta_impressoes": 0, "google_impressoes": 1787, "cliques": 126, "meta_cliques": 0, "google_cliques": 126, "sessoes": 119, "leads": 2.0, "meta_leads": 0.0, "google_leads": 2.0, "cpm": 54.39, "ctr": 7.05, "cpc": 0.77, "cps": 0.82, "cpl": 48.59}
+      ]
+    };
+
+    // Initial default clients state
+    const DEFAULT_CLIENTS = [
+      {
+        id: "client_teste",
+        name: "Cliente Teste",
+        sheetsUrl: "",
+        sheetTab: "Geral Mensal",
+        color: "from-v4-red to-pink-600",
+        lastSync: "2026-08-26T14:30:00Z",
+        data: JSON.parse(JSON.stringify(DEFAULT_DATA_CLIENT_TESTE))
+      },
+      {
+        id: "client_alfa",
+        name: "Alpha E-commerce",
+        sheetsUrl: "",
+        sheetTab: "Geral Mensal",
+        color: "from-blue-600 to-cyan-500",
+        lastSync: null,
+        data: {
+          summary: {
+            consolidado: { investimento: 7850.00, impressoes: 450200, cliques: 4980, cpm: 17.43, ctr: 1.10, cpc: 1.57, sessoes: 4200, cps: 1.86, leads: 280.0, cpl: 28.03 },
+            meta: { investimento: 4200.00, impressoes: 380000, cliques: 2100, cpm: 11.05, ctr: 0.55, cpc: 2.00, sessoes: 0, cps: 0, leads: 190.0, cpl: 22.10 },
+            google: { investimento: 3650.00, impressoes: 70200, cliques: 2880, cpm: 51.99, ctr: 4.10, cpc: 1.26, sessoes: 0, cps: 0, leads: 90.0, cpl: 40.55 }
+          },
+          daily: [
+            {"date": "2026-08-01", "day": 1, "investimento": 310.0, "meta_investimento": 160.0, "google_investimento": 150.0, "impressoes": 18000, "meta_impressoes": 15000, "google_impressoes": 3000, "cliques": 190, "meta_cliques": 80, "google_cliques": 110, "sessoes": 160, "leads": 12.0, "meta_leads": 8.0, "google_leads": 4.0, "cpm": 17.22, "ctr": 1.05, "cpc": 1.63, "cps": 1.93, "cpl": 25.83},
+            {"date": "2026-08-02", "day": 2, "investimento": 295.0, "meta_investimento": 155.0, "google_investimento": 140.0, "impressoes": 17500, "meta_impressoes": 14500, "google_impressoes": 3000, "cliques": 185, "meta_cliques": 75, "google_cliques": 110, "sessoes": 155, "leads": 11.0, "meta_leads": 7.0, "google_leads": 4.0, "cpm": 16.85, "ctr": 1.05, "cpc": 1.59, "cps": 1.90, "cpl": 26.81}
+          ]
+        }
+      },
+      {
+        id: "client_beta",
+        name: "Beta B2B Tech",
+        sheetsUrl: "",
+        sheetTab: "Geral Mensal",
+        color: "from-amber-500 to-emerald-500",
+        lastSync: null,
+        data: {
+          summary: {
+            consolidado: { investimento: 3200.00, impressoes: 120000, cliques: 1450, cpm: 26.66, ctr: 1.20, cpc: 2.20, sessoes: 1180, cps: 2.71, leads: 48.0, cpl: 66.66 },
+            meta: { investimento: 1200.00, impressoes: 90000, cliques: 450, cpm: 13.33, ctr: 0.50, cpc: 2.66, sessoes: 0, cps: 0, leads: 22.0, cpl: 54.54 },
+            google: { investimento: 2000.00, impressoes: 30000, cliques: 1000, cpm: 66.66, ctr: 3.33, cpc: 2.00, sessoes: 0, cps: 0, leads: 26.0, cpl: 76.92 }
+          },
+          daily: [
+            {"date": "2026-08-01", "day": 1, "investimento": 140.0, "meta_investimento": 50.0, "google_investimento": 90.0, "impressoes": 5200, "meta_impressoes": 4000, "google_impressoes": 1200, "cliques": 65, "meta_cliques": 20, "google_cliques": 45, "sessoes": 55, "leads": 2.0, "meta_leads": 1.0, "google_leads": 1.0, "cpm": 26.92, "ctr": 1.25, "cpc": 2.15, "cps": 2.54, "cpl": 70.0}
+          ]
+        }
+      }
+    ];
+
+    // State Variables
+    let clients = [];
+    let activeClientId = '';
+    let currentChannel = 'consolidado'; // 'consolidado', 'meta', 'google'
+    let charts = {};
+
+    // Helper formatters
+    const fmtCurrency = (val) => {
+      if (val === null || val === undefined || isNaN(val) || val === '-') return '-';
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    };
+    const fmtNumber = (val) => {
+      if (val === null || val === undefined || isNaN(val) || val === '-') return '-';
+      return new Intl.NumberFormat('pt-BR').format(Math.round(val * 100) / 100);
+    };
+    const fmtPercent = (val) => {
+      if (val === null || val === undefined || isNaN(val) || val === '-') return '-';
+      return val.toFixed(2).replace('.', ',') + '%';
+    };
+
+    // Helper: Extract Spreadsheet ID from Google Drive URL or direct ID
+    function extractSpreadsheetId(urlOrId) {
+      if (!urlOrId) return '';
+      const match = urlOrId.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      return match ? match[1] : urlOrId.trim();
+    }
+
+    // Helper: Generate Initials
+    function getInitials(name) {
+      if (!name) return 'V4';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+    }
+
+    // Helper: Palette Generator for new clients
+    const COLOR_PALETTES = [
+      'from-v4-red to-pink-600',
+      'from-blue-600 to-cyan-500',
+      'from-amber-500 to-emerald-500',
+      'from-purple-600 to-indigo-500',
+      'from-emerald-500 to-teal-400',
+      'from-rose-500 to-orange-400'
+    ];
+
+    // ==========================================
+    // INITIALIZATION & CLIENT STORAGE
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+      initClients();
+      lucide.createIcons();
+      document.addEventListener('click', handleGlobalClick);
+    });
+
+    function initClients() {
+      const savedClientsJson = localStorage.getItem(CLIENTS_STORAGE_KEY);
+      if (savedClientsJson) {
+        try {
+          clients = JSON.parse(savedClientsJson);
+        } catch (e) {
+          console.error('Erro ao ler clientes salvos:', e);
+          clients = JSON.parse(JSON.stringify(DEFAULT_CLIENTS));
+        }
+      } else {
+        clients = JSON.parse(JSON.stringify(DEFAULT_CLIENTS));
+        // Check if user previously had a legacy single sheets url
+        const legacyUrl = localStorage.getItem('v4_sheets_url');
+        if (legacyUrl && clients[0]) {
+          clients[0].sheetsUrl = legacyUrl;
+        }
+        saveClients();
+      }
+
+      // Restore active client ID or default to first
+      const savedActiveId = localStorage.getItem(ACTIVE_CLIENT_STORAGE_KEY);
+      if (savedActiveId && clients.some(c => c.id === savedActiveId)) {
+        activeClientId = savedActiveId;
+      } else if (clients.length > 0) {
+        activeClientId = clients[0].id;
+      }
+
+      renderClientDropdown();
+      updateDashboard();
+    }
+
+    function saveClients() {
+      localStorage.setItem(CLIENTS_STORAGE_KEY, JSON.stringify(clients));
+      localStorage.setItem(ACTIVE_CLIENT_STORAGE_KEY, activeClientId);
+      document.getElementById('clientCountBadge').innerText = clients.length;
+      document.getElementById('modalTabCount').innerText = clients.length;
+    }
+
+    function getActiveClient() {
+      return clients.find(c => c.id === activeClientId) || clients[0];
+    }
+
+    // ==========================================
+    // CLIENT SELECTION & DROPDOWN UI
+    // ==========================================
+    function toggleClientDropdown(event) {
+      event.stopPropagation();
+      const menu = document.getElementById('clientDropdownMenu');
+      const chevron = document.getElementById('clientDropdownChevron');
+      const isHidden = menu.classList.contains('hidden');
+      
+      if (isHidden) {
+        menu.classList.remove('hidden');
+        chevron.classList.add('rotate-180');
+        renderClientDropdown();
+        document.getElementById('clientSearchInput').focus();
+      } else {
+        closeClientDropdown();
+      }
+    }
+
+    function closeClientDropdown() {
+      const menu = document.getElementById('clientDropdownMenu');
+      const chevron = document.getElementById('clientDropdownChevron');
+      if (menu) menu.classList.add('hidden');
+      if (chevron) chevron.classList.remove('rotate-180');
+    }
+
+    function handleGlobalClick(e) {
+      const menu = document.getElementById('clientDropdownMenu');
+      const btn = document.getElementById('clientDropdownBtn');
+      if (menu && !menu.contains(e.target) && !btn.contains(e.target)) {
+        closeClientDropdown();
+      }
+    }
+
+    function renderClientDropdown(filterTerm = '') {
+      const container = document.getElementById('clientDropdownList');
+      if (!container) return;
+
+      const q = filterTerm.toLowerCase().trim();
+      const filtered = clients.filter(c => c.name.toLowerCase().includes(q));
+
+      container.innerHTML = '';
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="py-4 text-center text-xs text-slate-500">
+            Nenhum cliente encontrado.
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(client => {
+        const isActive = client.id === activeClientId;
+        const initials = getInitials(client.name);
+        const hasSheets = Boolean(client.sheetsUrl && extractSpreadsheetId(client.sheetsUrl));
+        const colorClass = client.color || 'from-v4-red to-pink-600';
+
+        const item = document.createElement('div');
+        item.className = `flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
+          isActive 
+            ? 'bg-slate-800/90 text-white border border-v4-borderLight' 
+            : 'hover:bg-slate-800/50 text-slate-300 hover:text-white'
+        }`;
+        item.onclick = () => {
+          selectClient(client.id);
+          closeClientDropdown();
+        };
+
+        item.innerHTML = `
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-tr ${colorClass} flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-sm">
+              ${initials}
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold truncate ${isActive ? 'text-white' : 'text-slate-200'}">${client.name}</div>
+              <div class="text-[10px] text-slate-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full ${hasSheets ? 'bg-emerald-400' : 'bg-slate-500'}"></span>
+                <span class="truncate">${hasSheets ? 'Sheets Conectado' : 'Sem planilha'}</span>
+              </div>
+            </div>
+          </div>
+          ${isActive ? '<i data-lucide="check" class="w-4 h-4 text-v4-red shrink-0"></i>' : ''}
+        `;
+
+        container.appendChild(item);
+      });
+
+      lucide.createIcons();
+    }
+
+    function filterClientList(val) {
+      renderClientDropdown(val);
+    }
+
+    function selectClient(clientId) {
+      activeClientId = clientId;
+      saveClients();
+      updateDashboard();
+      showToast(`Cliente selecionado: ${getActiveClient().name}`);
+    }
+
+    // ==========================================
+    // DASHBOARD RENDERING FOR ACTIVE CLIENT
+    // ==========================================
+    function setChannel(channel) {
+      currentChannel = channel;
+      ['consolidado', 'meta', 'google'].forEach(c => {
+        const btn = document.getElementById(`btn${c.charAt(0).toUpperCase() + c.slice(1)}`);
+        if (c === channel) {
+          btn.className = "flex-1 md:flex-none px-3.5 py-1.5 text-xs font-bold rounded-md transition-all text-white bg-v4-red shadow-sm shadow-v4-red/30";
+        } else {
+          btn.className = "flex-1 md:flex-none px-3.5 py-1.5 text-xs font-medium rounded-md transition-all text-slate-400 hover:text-white";
+        }
+      });
+      updateDashboard();
+    }
+
+    function updateDashboard() {
+      const client = getActiveClient();
+      if (!client) return;
+
+      const initials = getInitials(client.name);
+      const colorClass = client.color || 'from-v4-red to-pink-600';
+      const hasSheets = Boolean(client.sheetsUrl && extractSpreadsheetId(client.sheetsUrl));
+      const sheetId = extractSpreadsheetId(client.sheetsUrl);
+
+      // 1. Update Header Info
+      document.getElementById('pageTitle').innerText = `Dashboard de Tráfego • ${client.name} | V4 Company`;
+      document.getElementById('activeClientName').innerText = client.name;
+      document.getElementById('tableTitleText').innerText = `Tabela Diária de Performance • ${client.name}`;
+      
+      const avatarEl = document.getElementById('activeClientAvatar');
+      avatarEl.className = `w-7 h-7 rounded-lg bg-gradient-to-tr ${colorClass} flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm`;
+      avatarEl.innerText = initials;
+
+      const sourceBadge = document.getElementById('activeClientSourceBadge');
+      if (hasSheets) {
+        sourceBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Google Sheets`;
+        document.getElementById('syncSourceText').innerText = `Planilha: ${sheetId.substring(0, 10)}...`;
+        document.getElementById('syncDotStatus').className = 'w-2 h-2 rounded-full bg-emerald-400';
+      } else {
+        sourceBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Modo Local`;
+        document.getElementById('syncSourceText').innerText = `Planilha não vinculada`;
+        document.getElementById('syncDotStatus').className = 'w-2 h-2 rounded-full bg-amber-400';
+      }
+
+      if (client.lastSync) {
+        const d = new Date(client.lastSync);
+        document.getElementById('lastSyncTimeText').innerText = `Atualizado às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+      } else {
+        document.getElementById('lastSyncTimeText').innerText = 'Ainda não sincronizado';
+      }
+
+      // 2. Fetch Active Client Data & Summary
+      const clientData = client.data || JSON.parse(JSON.stringify(DEFAULT_DATA_CLIENT_TESTE));
+      const data = (clientData.summary && clientData.summary[currentChannel]) || DEFAULT_DATA_CLIENT_TESTE.summary[currentChannel];
+      const isConsolidado = currentChannel === 'consolidado';
+
+      // 3. Update 10 Cards
+      document.getElementById('cardInvestimento').innerText = fmtCurrency(data.investimento);
+      document.getElementById('cardImpressoes').innerText = fmtNumber(data.impressoes);
+      document.getElementById('cardCliques').innerText = fmtNumber(data.cliques);
+      document.getElementById('cardCPM').innerText = fmtCurrency(data.cpm);
+      document.getElementById('cardCTR').innerText = fmtPercent(data.ctr);
+      document.getElementById('cardCPC').innerText = fmtCurrency(data.cpc);
+      document.getElementById('cardSessoes').innerText = isConsolidado ? fmtNumber(data.sessoes) : fmtNumber(data.cliques);
+      document.getElementById('cardCPS').innerText = isConsolidado ? fmtCurrency(data.cps) : fmtCurrency(data.cpc);
+      document.getElementById('cardLeads').innerText = fmtNumber(data.leads);
+      document.getElementById('cardCPL').innerText = fmtCurrency(data.cpl);
+
+      // Subtitles on cards for share analysis
+      const metaInv = clientData.summary?.meta?.investimento || 0;
+      const gooInv = clientData.summary?.google?.investimento || 0;
+      const totalInv = metaInv + gooInv;
+      if (totalInv > 0) {
+        const metaPct = Math.round((metaInv / totalInv) * 100);
+        const gooPct = 100 - metaPct;
+        document.getElementById('subInvestimento').innerText = `Meta ${metaPct}% • Google ${gooPct}%`;
+      }
+
+      // Summary Table Row
+      document.getElementById('tblTotalInvest').innerText = fmtCurrency(data.investimento);
+      document.getElementById('tblTotalImpr').innerText = fmtNumber(data.impressoes);
+      document.getElementById('tblTotalClicks').innerText = fmtNumber(data.cliques);
+      document.getElementById('tblTotalCPM').innerText = fmtCurrency(data.cpm);
+      document.getElementById('tblTotalCTR').innerText = fmtPercent(data.ctr);
+      document.getElementById('tblTotalCPC').innerText = fmtCurrency(data.cpc);
+      document.getElementById('tblTotalSessions').innerText = isConsolidado ? fmtNumber(data.sessoes) : fmtNumber(data.cliques);
+      document.getElementById('tblTotalCPS').innerText = isConsolidado ? fmtCurrency(data.cps) : fmtCurrency(data.cpc);
+      document.getElementById('tblTotalLeads').innerText = fmtNumber(data.leads);
+      document.getElementById('tblTotalCPL').innerText = fmtCurrency(data.cpl);
+
+      renderCharts(clientData);
+      renderDailyTable(clientData);
+      lucide.createIcons();
+    }
+
+    function renderCharts(clientData) {
+      const dailyRecords = clientData.daily || [];
+      
+      const dates = dailyRecords.length > 0 
+        ? dailyRecords.map(d => d.date ? d.date.split('-').slice(1).reverse().join('/') : (d.day < 10 ? '0' + d.day : d.day) + '/08')
+        : ['01/08', '02/08', '03/08'];
+      
+      let investSeries, leadsSeries, cplSeries, clicksSeries, sessionsSeries;
+
+      if (currentChannel === 'meta') {
+        investSeries = dailyRecords.map(d => d.meta_investimento ?? (d.investimento * 0.45));
+        leadsSeries = dailyRecords.map(d => d.meta_leads ?? Math.round(d.leads * 0.7));
+        cplSeries = dailyRecords.map((d, i) => leadsSeries[i] > 0 ? Number((investSeries[i] / leadsSeries[i]).toFixed(2)) : 0);
+        clicksSeries = dailyRecords.map(d => d.meta_cliques ?? Math.round(d.cliques * 0.35));
+        sessionsSeries = dailyRecords.map(d => d.meta_cliques ?? Math.round(d.cliques * 0.35));
+      } else if (currentChannel === 'google') {
+        investSeries = dailyRecords.map(d => d.google_investimento ?? (d.investimento * 0.55));
+        leadsSeries = dailyRecords.map(d => d.google_leads ?? Math.round(d.leads * 0.3));
+        cplSeries = dailyRecords.map((d, i) => leadsSeries[i] > 0 ? Number((investSeries[i] / leadsSeries[i]).toFixed(2)) : 0);
+        clicksSeries = dailyRecords.map(d => d.google_cliques ?? Math.round(d.cliques * 0.65));
+        sessionsSeries = dailyRecords.map(d => d.google_cliques ?? Math.round(d.cliques * 0.65));
+      } else {
+        investSeries = dailyRecords.map(d => d.investimento);
+        leadsSeries = dailyRecords.map(d => d.leads);
+        cplSeries = dailyRecords.map(d => d.cpl ?? (d.leads > 0 ? Number((d.investimento / d.leads).toFixed(2)) : 0));
+        clicksSeries = dailyRecords.map(d => d.cliques);
+        sessionsSeries = dailyRecords.map(d => d.sessoes ?? d.cliques);
+      }
+
+      // 1. Chart Evolution (Investimento vs Leads vs CPL)
+      if (charts.evolution) charts.evolution.destroy();
+      const evolutionOptions = {
+        series: [
+          { name: 'Investimento (R$)', type: 'column', data: investSeries },
+          { name: 'Leads', type: 'column', data: leadsSeries },
+          { name: 'CPL (R$)', type: 'line', data: cplSeries }
+        ],
+        chart: {
+          height: 280,
+          type: 'line',
+          toolbar: { show: false },
+          background: 'transparent'
+        },
+        stroke: { width: [0, 0, 2.5], curve: 'smooth' },
+        colors: ['#ff2d55', '#10b981', '#f59e0b'],
+        plotOptions: {
+          bar: { columnWidth: '45%', borderRadius: 2 }
+        },
+        labels: dates,
+        xaxis: {
+          labels: { style: { colors: '#94a3b8', fontSize: '10px' } },
+          axisBorder: { show: false },
+          axisTicks: { show: false }
+        },
+        yaxis: [
+          {
+            title: { text: 'Investimento (R$)', style: { color: '#ff2d55', fontSize: '10px' } },
+            labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v) => 'R$ ' + Number(v).toFixed(0) }
+          },
+          {
+            show: false,
+            title: { text: 'Leads' }
+          },
+          {
+            opposite: true,
+            title: { text: 'CPL (R$)', style: { color: '#f59e0b', fontSize: '10px' } },
+            labels: { style: { colors: '#f59e0b', fontSize: '10px' }, formatter: (v) => 'R$ ' + Number(v).toFixed(0) }
+          }
+        ],
+        grid: { borderColor: '#1f293d', strokeDashArray: 3 },
+        tooltip: {
+          theme: 'dark',
+          shared: true,
+          y: {
+            formatter: (y, { seriesIndex }) => {
+              if (seriesIndex === 0) return fmtCurrency(y);
+              if (seriesIndex === 1) return fmtNumber(y) + ' leads';
+              return fmtCurrency(y);
+            }
+          }
+        },
+        legend: { show: false }
+      };
+      charts.evolution = new ApexCharts(document.querySelector("#chartEvolution"), evolutionOptions);
+      charts.evolution.render();
+
+      // 2. Chart Traffic (Cliques vs Sessões)
+      if (charts.traffic) charts.traffic.destroy();
+      const trafficOptions = {
+        series: [
+          { name: 'Cliques', data: clicksSeries },
+          { name: 'Sessões', data: sessionsSeries }
+        ],
+        chart: { type: 'bar', height: 280, toolbar: { show: false }, background: 'transparent' },
+        colors: ['#3b82f6', '#14b8a6'],
+        plotOptions: { bar: { columnWidth: '50%', borderRadius: 2 } },
+        xaxis: { categories: dates, labels: { style: { colors: '#94a3b8', fontSize: '10px' } } },
+        yaxis: { labels: { style: { colors: '#94a3b8', fontSize: '10px' }, formatter: (v) => fmtNumber(v) } },
+        grid: { borderColor: '#1f293d', strokeDashArray: 3 },
+        tooltip: { theme: 'dark', y: { formatter: (v) => fmtNumber(v) } },
+        legend: { show: false }
+      };
+      charts.traffic = new ApexCharts(document.querySelector("#chartTraffic"), trafficOptions);
+      charts.traffic.render();
+    }
+
+    // Render Daily Performance Table
+    function renderDailyTable(clientData) {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      const dailyRecords = clientData.daily || [];
+      if (dailyRecords.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="11" class="p-4 text-center text-slate-500 font-sans">
+              Nenhum registro diário carregado para este cliente. Sincronize a planilha do Google Sheets.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      dailyRecords.forEach(d => {
+        let inv, impr, clk, cpm, ctr, cpc, sess, cps, lds, cpl;
+
+        if (currentChannel === 'meta') {
+          inv = d.meta_investimento ?? (d.investimento * 0.45);
+          impr = d.meta_impressoes ?? (d.impressoes * 0.9);
+          clk = d.meta_cliques ?? (d.cliques * 0.35);
+          cpm = impr > 0 ? (inv / impr * 1000) : 0;
+          ctr = impr > 0 ? (clk / impr * 100) : 0;
+          cpc = clk > 0 ? (inv / clk) : 0;
+          sess = clk;
+          cps = cpc;
+          lds = d.meta_leads ?? (d.leads * 0.7);
+          cpl = lds > 0 ? (inv / lds) : 0;
+        } else if (currentChannel === 'google') {
+          inv = d.google_investimento ?? (d.investimento * 0.55);
+          impr = d.google_impressoes ?? (d.impressoes * 0.1);
+          clk = d.google_cliques ?? (d.cliques * 0.65);
+          cpm = impr > 0 ? (inv / impr * 1000) : 0;
+          ctr = impr > 0 ? (clk / impr * 100) : 0;
+          cpc = clk > 0 ? (inv / clk) : 0;
+          sess = clk;
+          cps = cpc;
+          lds = d.google_leads ?? (d.leads * 0.3);
+          cpl = lds > 0 ? (inv / lds) : 0;
+        } else {
+          inv = d.investimento;
+          impr = d.impressoes;
+          clk = d.cliques;
+          cpm = d.cpm ?? (impr > 0 ? (inv / impr * 1000) : 0);
+          ctr = d.ctr ?? (impr > 0 ? (clk / impr * 100) : 0);
+          cpc = d.cpc ?? (clk > 0 ? (inv / clk) : 0);
+          sess = d.sessoes ?? clk;
+          cps = d.cps ?? (sess > 0 ? (inv / sess) : 0);
+          lds = d.leads;
+          cpl = d.cpl ?? (lds > 0 ? (inv / lds) : 0);
+        }
+
+        const dateFormatted = d.date ? d.date.split('-').reverse().join('/') : `${d.day < 10 ? '0' + d.day : d.day}/08/2026`;
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40 transition-colors';
+        tr.innerHTML = `
+          <td class="p-3 sticky left-0 z-10 bg-v4-card border-r border-v4-border text-slate-300 font-sans">
+            ${dateFormatted}
+          </td>
+          <td class="p-3 text-right text-slate-200 font-semibold">${fmtCurrency(inv)}</td>
+          <td class="p-3 text-right text-slate-300">${fmtNumber(impr)}</td>
+          <td class="p-3 text-right text-slate-300">${fmtNumber(clk)}</td>
+          <td class="p-3 text-right text-slate-300">${fmtCurrency(cpm)}</td>
+          <td class="p-3 text-right text-slate-300">${fmtPercent(ctr)}</td>
+          <td class="p-3 text-right text-slate-300">${fmtCurrency(cpc)}</td>
+          <td class="p-3 text-right text-slate-300">${fmtNumber(sess)}</td>
+          <td class="p-3 text-right text-slate-300">${fmtCurrency(cps)}</td>
+          <td class="p-3 text-right text-emerald-400 font-bold">${fmtNumber(lds)}</td>
+          <td class="p-3 text-right text-v4-red font-bold">${fmtCurrency(cpl)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Filter table by search term
+    function filterDailyTable(query) {
+      const q = query.toLowerCase().trim();
+      const rows = document.querySelectorAll('#tableBody tr');
+      rows.forEach(r => {
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(q) ? '' : 'none';
+      });
+    }
+
+    // ========================================================
+    // GOOGLE SHEETS LIVE SYNC ENGINE (JSONP / GVIZ API)
+    // ========================================================
+    function fetchGVizJSONP(sheetId, sheetName) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'gviz_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error('Tempo limite de conexão ao Google Sheets. Verifique se o link está correto e compartilhado como "Qualquer pessoa com o link".'));
+        }, 12000);
+
+        function cleanup() {
+          clearTimeout(timeout);
+          delete window[callbackName];
+          const el = document.getElementById(callbackName);
+          if (el) el.remove();
+        }
+
+        window[callbackName] = function(response) {
+          cleanup();
+          if (response && response.status === 'ok' && response.table) {
+            resolve(response.table);
+          } else if (response && response.errors) {
+            reject(new Error(response.errors.map(e => e.message || e.detailed_message).join(', ')));
+          } else {
+            reject(new Error('Resposta inválida recebida do Google Sheets.'));
+          }
+        };
+
+        const script = document.createElement('script');
+        script.id = callbackName;
+        const sheetParam = sheetName ? `&sheet=${encodeURIComponent(sheetName)}` : '';
+        script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${callbackName}${sheetParam}`;
+        script.onerror = function() {
+          cleanup();
+          reject(new Error('Não foi possível carregar a planilha. Verifique as permissões de compartilhamento ("Qualquer pessoa com o link" como Leitor).'));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    // Sincronizar o cliente atualmente selecionado
+    async function syncCurrentClient() {
+      const client = getActiveClient();
+      if (!client) return;
+
+      const sheetId = extractSpreadsheetId(client.sheetsUrl);
+      if (!sheetId) {
+        openEditActiveClientModal();
+        showToast('Adicione o link do Google Sheets para este cliente');
+        return;
+      }
+
+      await syncClientById(client.id, true);
+    }
+
+    // Sincronizar qualquer cliente por ID
+    async function syncClientById(clientId, showAlert = false) {
+      const client = clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      const syncIcon = document.getElementById('syncIcon');
+      if (syncIcon) syncIcon.classList.add('animate-spin');
+
+      const sheetId = extractSpreadsheetId(client.sheetsUrl);
+      if (!sheetId) {
+        if (syncIcon) syncIcon.classList.remove('animate-spin');
+        return;
+      }
+
+      try {
+        const tabToTry = client.sheetTab || 'Geral Mensal';
+        let table;
+        try {
+          table = await fetchGVizJSONP(sheetId, tabToTry);
+        } catch (tabErr) {
+          console.warn(`Tentando aba padrão sem nome para ${client.name}...`, tabErr);
+          table = await fetchGVizJSONP(sheetId, '');
+        }
+
+        const parsedData = parseGVizData(table, client.data);
+        client.data = parsedData;
+        client.lastSync = new Date().toISOString();
+        saveClients();
+
+        if (clientId === activeClientId) {
+          updateDashboard();
+        }
+        renderClientDropdown();
+        renderAllClientsModalList();
+
+        showToast(`Cliente ${client.name} sincronizado com sucesso!`);
+      } catch (err) {
+        console.error('Erro de sincronização:', err);
+        if (showAlert) {
+          alert(`Aviso de Sincronização (${client.name}):\n\n${err.message}\n\nCertifique-se de que a planilha está compartilhada com "Qualquer pessoa com o link" como Leitor.`);
+        } else {
+          showToast(`Erro ao sincronizar ${client.name}: verifique as permissões`);
+        }
+      } finally {
+        if (syncIcon) syncIcon.classList.remove('animate-spin');
+      }
+    }
+
+    async function syncAllClients() {
+      let count = 0;
+      for (const client of clients) {
+        if (client.sheetsUrl && extractSpreadsheetId(client.sheetsUrl)) {
+          await syncClientById(client.id, false);
+          count++;
+        }
+      }
+      showToast(`${count} cliente(s) com planilha sincronizados!`);
+    }
+
+    // Parser robusto para tabela GViz do Google Sheets
+    function parseGVizData(table, existingData) {
+      if (!table || !table.rows) return existingData;
+
+      const cols = table.cols || [];
+      const rows = table.rows || [];
+
+      // Create a fresh clone of base structure
+      const resultData = JSON.parse(JSON.stringify(existingData || DEFAULT_DATA_CLIENT_TESTE));
+
+      // Find August / Month Column
+      let targetCol = -1;
+      cols.forEach((col, idx) => {
+        const label = (col.label || '').toLowerCase();
+        if (label.includes('08') || label.includes('ago') || label.includes('august') || label.includes('total') || label.includes('consolidado')) {
+          targetCol = idx;
+        }
+      });
+      if (targetCol === -1) targetCol = 8; // fallback column index
+
+      const extracted = {};
+      rows.forEach(r => {
+        if (!r.c || r.c.length === 0) return;
+        const metricName = (r.c[0]?.v || '').toString().trim().toUpperCase();
+        if (!metricName) return;
+
+        const cell = r.c[targetCol] || r.c[1];
+        let val = cell ? cell.v : null;
+        if (typeof val === 'string') {
+          val = val.replace('R$', '').replace('%', '').trim().replace(/\./g, '').replace(',', '.');
+          val = Number(val);
+        }
+        if (typeof val === 'number' && !isNaN(val)) {
+          extracted[metricName] = val;
+        }
+      });
+
+      if (extracted['INVESTIMENTO'] !== undefined) {
+        resultData.summary.consolidado.investimento = extracted['INVESTIMENTO'];
+        if (extracted['IMPRESSÕES']) resultData.summary.consolidado.impressoes = extracted['IMPRESSÕES'];
+        if (extracted['CLIQUES']) resultData.summary.consolidado.cliques = extracted['CLIQUES'];
+        if (extracted['CPM']) resultData.summary.consolidado.cpm = extracted['CPM'];
+        if (extracted['CTR']) resultData.summary.consolidado.ctr = extracted['CTR'] < 1 ? extracted['CTR'] * 100 : extracted['CTR'];
+        if (extracted['CPC']) resultData.summary.consolidado.cpc = extracted['CPC'];
+        if (extracted['SESSÕES']) resultData.summary.consolidado.sessoes = extracted['SESSÕES'];
+        if (extracted['CPS']) resultData.summary.consolidado.cps = extracted['CPS'];
+        if (extracted['LEADS']) resultData.summary.consolidado.leads = extracted['LEADS'];
+        if (extracted['CPL']) resultData.summary.consolidado.cpl = extracted['CPL'];
+      }
+
+      return resultData;
+    }
+
+    // Upload local de arquivo (.xlsx / .csv)
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const client = getActiveClient();
+      if (!client) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.SheetNames[0];
+          const sheet = workbook.Sheets['Geral Mensal'] || workbook.Sheets[firstSheet];
+          const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+          if (jsonData && jsonData.length > 2) {
+            const headerRow = jsonData[0];
+            let augCol = 8;
+            headerRow.forEach((h, idx) => {
+              const str = String(h || '').toLowerCase();
+              if (str.includes('08') || str.includes('ago') || str.includes('august')) augCol = idx;
+            });
+
+            jsonData.slice(1).forEach(row => {
+              const metric = String(row[0] || '').trim().toUpperCase();
+              let val = row[augCol];
+              if (typeof val === 'string') {
+                val = Number(val.replace('R$', '').replace('%', '').replace(/\./g, '').replace(',', '.').trim());
+              }
+              if (typeof val === 'number' && !isNaN(val)) {
+                if (metric === 'INVESTIMENTO') client.data.summary.consolidado.investimento = val;
+                if (metric === 'IMPRESSÕES') client.data.summary.consolidado.impressoes = val;
+                if (metric === 'CLIQUES') client.data.summary.consolidado.cliques = val;
+                if (metric === 'CPM') client.data.summary.consolidado.cpm = val;
+                if (metric === 'CTR') client.data.summary.consolidado.ctr = val < 1 ? val * 100 : val;
+                if (metric === 'CPC') client.data.summary.consolidado.cpc = val;
+                if (metric === 'SESSÕES') client.data.summary.consolidado.sessoes = val;
+                if (metric === 'CPS') client.data.summary.consolidado.cps = val;
+                if (metric === 'LEADS') client.data.summary.consolidado.leads = val;
+                if (metric === 'CPL') client.data.summary.consolidado.cpl = val;
+              }
+            });
+
+            client.lastSync = new Date().toISOString();
+            saveClients();
+            updateDashboard();
+            closeClientManagerModal();
+            showToast(`Arquivo importado com sucesso para ${client.name}!`);
+          }
+        } catch (err) {
+          alert('Erro ao ler arquivo: ' + err.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // ========================================================
+    // CLIENT MANAGER MODAL LOGIC & TABS
+    // ========================================================
+    function openClientManagerModal(defaultTab = 'activeClient') {
+      document.getElementById('clientManagerModal').classList.remove('hidden');
+      setModalTab(defaultTab);
+      closeClientDropdown();
+    }
+
+    function openEditActiveClientModal() {
+      openClientManagerModal('activeClient');
+    }
+
+    function openAddClientModal() {
+      openClientManagerModal('newClient');
+    }
+
+    function closeClientManagerModal() {
+      document.getElementById('clientManagerModal').classList.add('hidden');
+    }
+
+    function setModalTab(tabName) {
+      // Buttons
+      document.getElementById('tabBtnActiveClient').className = tabName === 'activeClient' 
+        ? 'px-3.5 py-1.5 font-bold rounded-lg bg-v4-red text-white transition-all shadow-sm' 
+        : 'px-3.5 py-1.5 font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all';
+      
+      document.getElementById('tabBtnAllClients').className = tabName === 'allClients' 
+        ? 'px-3.5 py-1.5 font-bold rounded-lg bg-v4-red text-white transition-all shadow-sm' 
+        : 'px-3.5 py-1.5 font-medium rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all';
+
+      document.getElementById('tabBtnNewClient').className = tabName === 'newClient' 
+        ? 'px-3.5 py-1.5 font-bold rounded-lg bg-emerald-600 text-white transition-all shadow-sm flex items-center gap-1.5' 
+        : 'px-3.5 py-1.5 font-medium rounded-lg text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 transition-all flex items-center gap-1.5';
+
+      // Tab Contents
+      document.getElementById('tabContentActiveClient').classList.toggle('hidden', tabName !== 'activeClient');
+      document.getElementById('tabContentAllClients').classList.toggle('hidden', tabName !== 'allClients');
+      document.getElementById('tabContentNewClient').classList.toggle('hidden', tabName !== 'newClient');
+
+      if (tabName === 'activeClient') {
+        populateActiveClientForm();
+      } else if (tabName === 'allClients') {
+        renderAllClientsModalList();
+      }
+      lucide.createIcons();
+    }
+
+    function populateActiveClientForm() {
+      const client = getActiveClient();
+      if (!client) return;
+
+      document.getElementById('modalActiveAvatar').innerText = getInitials(client.name);
+      document.getElementById('modalActiveTitle').innerText = client.name;
+      document.getElementById('modalActiveSubtitle').innerText = `ID: ${client.id}`;
+      document.getElementById('editClientNameInput').value = client.name;
+      document.getElementById('editClientSheetsUrlInput').value = client.sheetsUrl || '';
+      document.getElementById('editClientSheetTabInput').value = client.sheetTab || '';
+    }
+
+    function saveActiveClientSettings(syncNow = false) {
+      const client = getActiveClient();
+      if (!client) return;
+
+      const newName = document.getElementById('editClientNameInput').value.trim();
+      const newUrl = document.getElementById('editClientSheetsUrlInput').value.trim();
+      const newTab = document.getElementById('editClientSheetTabInput').value.trim();
+
+      if (newName) client.name = newName;
+      client.sheetsUrl = newUrl;
+      client.sheetTab = newTab || 'Geral Mensal';
+
+      saveClients();
+      updateDashboard();
+      renderClientDropdown();
+      showToast('Configurações do cliente salvas!');
+
+      if (syncNow) {
+        syncCurrentClient();
+        closeClientManagerModal();
+      }
+    }
+
+    function renderAllClientsModalList() {
+      const container = document.getElementById('allClientsListContainer');
+      container.innerHTML = '';
+
+      clients.forEach(client => {
+        const isActive = client.id === activeClientId;
+        const initials = getInitials(client.name);
+        const hasSheets = Boolean(client.sheetsUrl && extractSpreadsheetId(client.sheetsUrl));
+        const colorClass = client.color || 'from-v4-red to-pink-600';
+
+        const card = document.createElement('div');
+        card.className = `p-3.5 rounded-xl bg-v4-bg border ${
+          isActive ? 'border-v4-red/60 bg-slate-900/90' : 'border-v4-border hover:border-slate-700'
+        } flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all`;
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr ${colorClass} flex items-center justify-center font-bold text-white shrink-0 text-xs shadow-sm">
+              ${initials}
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white text-xs sm:text-sm truncate">${client.name}</span>
+                ${isActive ? '<span class="px-2 py-0.5 text-[10px] font-bold bg-v4-red text-white rounded">Ativo</span>' : ''}
+              </div>
+              <div class="text-[11px] text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
+                <span class="w-1.5 h-1.5 rounded-full ${hasSheets ? 'bg-emerald-400' : 'bg-slate-600'}"></span>
+                <span>${hasSheets ? 'Sheets: ' + extractSpreadsheetId(client.sheetsUrl).substring(0, 12) + '...' : 'Sem link de planilha'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+            ${!isActive ? `
+              <button onclick="selectClient('${client.id}'); setModalTab('activeClient');" class="px-2.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-all" title="Selecionar este cliente">
+                Selecionar
+              </button>
+            ` : ''}
+
+            <button onclick="syncClientById('${client.id}', true)" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-lg transition-all" title="Sincronizar Planilha">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+
+            <button onclick="editSpecificClient('${client.id}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all" title="Editar">
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+            </button>
+
+            ${clients.length > 1 ? `
+              <button onclick="deleteClient('${client.id}')" class="p-1.5 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg transition-all" title="Excluir">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            ` : ''}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    function editSpecificClient(clientId) {
+      selectClient(clientId);
+      setModalTab('activeClient');
+    }
+
+    function deleteClient(clientId) {
+      if (clients.length <= 1) {
+        alert('Não é possível excluir o único cliente cadastrado.');
+        return;
+      }
+      const client = clients.find(c => c.id === clientId);
+      if (!client) return;
+
+      if (confirm(`Tem certeza que deseja excluir o cliente "${client.name}"?`)) {
+        clients = clients.filter(c => c.id !== clientId);
+        if (activeClientId === clientId) {
+          activeClientId = clients[0].id;
+        }
+        saveClients();
+        updateDashboard();
+        renderClientDropdown();
+        renderAllClientsModalList();
+        showToast(`Cliente "${client.name}" removido.`);
+      }
+    }
+
+    function createNewClientSubmit() {
+      const nameInput = document.getElementById('newClientNameInput');
+      const urlInput = document.getElementById('newClientSheetsUrlInput');
+      const tabInput = document.getElementById('newClientSheetTabInput');
+
+      const name = nameInput.value.trim();
+      const url = urlInput.value.trim();
+      const tab = tabInput.value.trim();
+
+      if (!name) {
+        alert('Por favor, digite o nome do novo cliente.');
+        nameInput.focus();
+        return;
+      }
+
+      const id = 'client_' + Date.now();
+      const paletteIndex = clients.length % COLOR_PALETTES.length;
+      const color = COLOR_PALETTES[paletteIndex];
+
+      const newClient = {
+        id: id,
+        name: name,
+        sheetsUrl: url,
+        sheetTab: tab || 'Geral Mensal',
+        color: color,
+        lastSync: null,
+        data: JSON.parse(JSON.stringify(DEFAULT_DATA_CLIENT_TESTE))
+      };
+
+      clients.push(newClient);
+      activeClientId = id;
+      saveClients();
+
+      // Clear input fields
+      nameInput.value = '';
+      urlInput.value = '';
+      tabInput.value = '';
+
+      updateDashboard();
+      renderClientDropdown();
+      closeClientManagerModal();
+      showToast(`Cliente "${name}" cadastrado e ativado!`);
+
+      if (url && extractSpreadsheetId(url)) {
+        syncClientById(id, true);
+      }
+    }
+
+    // Toast feedback helper
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMessage').innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3500);
+    }
+
+    // Export CSV with active client context
+    function exportClientCSV() {
+      const client = getActiveClient();
+      const table = document.getElementById('augustTable');
+      let csv = [];
+      for (let r of table.rows) {
+        let row = [];
+        for (let c of r.cells) {
+          row.push('"' + c.innerText.replace(/"/g, '""').trim() + '"');
+        }
+        csv.push(row.join(';'));
+      }
+      const blob = new Blob(["\ufeff" + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      const safeName = (client ? client.name : 'cliente').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      link.download = `metricas_${safeName}_agosto_2026_${new Date().toISOString().substring(0, 10)}.csv`;
+      link.click();
+    }
+  </script>
+</body>
+</html>
